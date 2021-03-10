@@ -17,7 +17,7 @@ otc:
 # 开发环境配置
 server:
   # 服务器的HTTP端口，默认为80
-  port: 80
+  port: 801
   servlet:
     # 应用的访问路径
     context-path: /
@@ -58,7 +58,7 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     #发布到运营时候修改该配置 online
   profiles:
-    active: online
+    active: druid
   # 文件上传
   servlet:
     multipart:

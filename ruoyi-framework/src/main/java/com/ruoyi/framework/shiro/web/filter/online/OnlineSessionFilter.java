@@ -68,24 +68,16 @@ public class OnlineSessionFilter extends AccessControlFilter {
                     StringBuffer url = req.getRequestURL();
                     String host = url.delete(url.length() - req.getRequestURI().length(), url.length()).toString();
 
-                  /*  SysUser sysUser = sysUserImpl.selectUserByLoginName(user.getLoginName());
-                        用户登陆操作  ip 限制
+                    SysUser sysUser = sysUserImpl.selectUserByLoginName(user.getLoginName());
                     boolean b = loginIp(sysUser, ShiroUtils.getIp());//ip不在访问进程内
                     if(!b){
                         return  b;
-                    }*/
+                    }
                     /**
                      * 当前代码限制 内部人员访问 只能通过  bestpays789.net       来访问
                      * */
                     if (filter.equals("1")) {
-                        boolean contains = host.contains("bestpays789.net");
-                        Long userId = user.getUserId();
-                        if (!contains && userId < 20) {
-                            return false;
-                        }
-                        if (userId > 20 && contains) {//外部人员访问我们内部地址
-                            return false;
-                        }
+
                     }
                 }
             }
@@ -97,21 +89,11 @@ public class OnlineSessionFilter extends AccessControlFilter {
                 if (null == user) {
                     return true;
                 }
-              /*    用户ip 限制
                 SysUser sysUser = sysUserImpl.selectUserByLoginName(user.getLoginName());
                 boolean b = loginIp(sysUser, ShiroUtils.getIp());//ip不在访问进程内
                 if(!b){
                     return  b;
-                }*/
-                boolean contains = host.contains("bestpays789.net");//内部管理访问
-                Long userId = user.getUserId();
-                if (!contains && userId < 20) {
-                    return false;
                 }
-                if (userId > 20 && contains) {//外部人员访问我们内部地址
-                    return false;
-                }
-
             }
 
             if (onlineSession.getStatus() == OnlineStatus.off_line) {

@@ -83,6 +83,12 @@ public class BackManageController extends BaseController {
     public String detail(ModelMap mmap) {
         SysUser sysUser = ShiroUtils.getSysUser();
         AlipayUserInfo userInfo = merchantInfoEntityService.selectBackUserByUserId(sysUser.getMerchantId());
+        userInfo.setPassword(null);
+        userInfo.setPayPasword(null);
+        userInfo.setInterFace(null);
+        userInfo.setAutoWit(null);
+        userInfo.setPublicKey(null);
+        userInfo.setPrivateKey(null);
         if (userInfo == null) {
             throw new BusinessException("此商户不存在");
         }
@@ -90,18 +96,6 @@ public class BackManageController extends BaseController {
         return prefix + "/detail";
     }
 
-
-    /**
-     * 商户保存修改信息
-     * @param alipayUserInfo
-     * @return
-     */
-    @Log(title = "商户信息", businessType = BusinessType.UPDATE)
-    @PostMapping("/audit")
-    @ResponseBody
-    public AjaxResult toSave(AlipayUserInfo alipayUserInfo) {
-        return toAjax(merchantInfoEntityService.updateMerchantByBackAdmin(alipayUserInfo));
-    }
 
     //商户查询交易订单
     @GetMapping("/order/view")

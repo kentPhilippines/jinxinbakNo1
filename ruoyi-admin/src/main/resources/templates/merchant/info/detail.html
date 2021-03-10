@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:include="include :: header('商户详细信息')"/>
     <style>
@@ -11,8 +11,6 @@
 <body class="white-bg">
 <div class="wrapper wrapper-content animated fadeInRight ibox-content">
     <form class="form-horizontal m" id="form-merchant-detail" th:object="${userInfo}">
-        <input type="hidden" id="publicKey" name="publicKey" th:field="*{publicKey}"/>
-        <input type="hidden" id="payPassword" name="payPassword" th:field="*{payPasword}"/>
         <div class="form-group">
             <label class="col-sm-2 control-label" style="font-weight: bold;font-size:15px;font-family: sans-serif;">商户账户：</label>
             <div class="col-sm-8">
@@ -64,25 +62,6 @@
 
         <hr/>
         <div class="form-group">
-            <label class="col-sm-2 control-label " style="font-weight: bold;font-size:15px;font-family: sans-serif;">商户公钥：</label>
-            <div class="col-sm-8">
-                <a class="glyphicon glyphicon-download-alt form-control"
-                   shiro:hasPermission="back:merchant:downloadPublicKey" style="cursor:pointer; border-width: 0;"
-                   title="点击下载参数加密公钥" aria-hidden="true"
-                   onclick="typePassword('public')"></a>
-            </div>
-        </div>
-        <hr/>
-        <div class="form-group">
-            <label class="col-sm-2 control-label " style="font-weight: bold;font-size:15px;font-family: sans-serif;">交易密钥：</label>
-            <div class="col-sm-8">
-                <a class="glyphicon glyphicon-download-alt form-control" style="cursor:pointer; border-width: 0;" shiro:hasPermission="back:merchant:downloadPayKey"
-                   title="点击下载交易请求密钥" aria-hidden="true"
-                   onclick="typePassword('pay')"></a>
-            </div>
-        </div>
-        <hr/>
-        <div class="form-group">
             <label class="col-sm-2 control-label" style="font-weight: bold;font-size:15px;font-family: sans-serif;">创建时间：</label>
             <div class="col-sm-8">
                 <input class="form-control" type="text" name="createTime" id="createTime"
@@ -124,134 +103,15 @@
             </div>
         </div>
         <hr/>
-        <div class="form-group">
-            <label class="col-sm-2 control-label is-required"
-                   style="font-weight: bold;font-size:15px;font-family: sans-serif;">IP白名单：</label>
-            <div class="col-sm-8">
-                <textarea id="dealUrl" name="dealUrl" maxlength="500" class="form-control" rows="3"
-                          style="border-width: 0; background-color: white " readonly="readonly"
-                          required>[[*{dealUrl}]]</textarea>
-            </div>
-        </div>
     </form>
 </div>
 <div style="text-align: center;margin-bottom: 5px;">
     <div style="text-align: center;">
-        <a id="audit" name="audit" class="btn btn-w-m btn-danger" href="javascript:void(0)" shiro:hasPermission="back:merchant:edit"
-           onclick="audit();">修改 </a>
-        <a id="toSave" name="toSave" class="btn btn-w-m btn-primary" href="javascript:void(0)" style="display: none;"
-           onclick="toSave();"> 保存</a>
-        <a id="cancel" name="cancel" class="btn btn-w-m btn-default" href="javascript:void(0)" style="display: none;"
-           onclick="toCancel();"> 取消</a>
     </div>
 </div>
 <th:block th:include="include :: footer"/>
 <script type="text/javascript" th:src="@{/static/js/download.js}"></script>
 <script type="text/javascript">
-    var prefix = ctx + "back/merchant/admin";
-    let verify = ctx + "alipay/merchant";
-
-
-    /*输入密码下载*/
-    function typePassword(type) {
-        let username = $("#userName").val();
-        let key = null;
-        let file = null;
-        let title = null;
-        if (type === 'public'){
-            key = $("#publicKey").val();
-            file = "参数加密公钥";
-            title = "输入密码下载参数加密公钥";
-        }else if(type === 'pay'){
-            key = $("#payPassword").val();
-            file = "交易请求密钥";
-            title = "输入密码下载交易请求密钥";
-        }
-        layer.prompt({title: title, formType: 1}, function (pass, index) {
-            layer.close(index);
-            jQuery.ajax({
-                type: "post",
-                url: verify + "/verify/password",
-                data: {
-                    "password": pass
-                },
-                dataType: "json",
-                success: function (data) {
-                    if (0 == data.code) {
-                        txtDownload(key, username + file);
-                    } else {
-                        layer.msg(data.msg, {icon: 2, time: 1000}, function () {
-                            typePassword();
-                        });
-                    }
-                }
-            });
-        });
-    }
-
-    /*下载txt*/
-    function txtDownload(content, filename) {
-        var eleLink = document.createElement('a');
-        var blob = new Blob([content]);
-        eleLink.href = URL.createObjectURL(blob);
-        eleLink.download = filename + '.txt';
-        eleLink.click();
-    }
-
-
-    function audit() {
-        $("#email").removeAttr("style").removeAttrs("readonly");
-        $("#QQ").removeAttr("style").removeAttrs("readonly");
-        $("#telegram").removeAttr("style").removeAttrs("readonly");
-        $("#skype").removeAttr("style").removeAttrs("readonly");
-        $("#dealUrl").removeAttr("style").removeAttrs("readonly");
-        $("#audit").attr("style", "display:none");
-        $("#toSave").removeAttr("style");
-        $("#cancel").removeAttr("style");
-    }
-
-    function toCancel() {
-        window.location.reload();
-    }
-
-    function toSave() {
-        let userId = $("#userId").val();
-        let email = $("#email").val();
-        let QQ = $("#QQ").val();
-        let telegram = $("#telegram").val();
-        let skype = $("#skype").val();
-        let dealUrl = $("#dealUrl").val();
-        layer.confirm('确认要保存此商户的信息？', {
-            title: "系统提示",
-            btn: ['确认', '取消'] //按钮
-        }, function () {
-            jQuery.ajax({
-                type: "post",
-                url: prefix + "/audit",
-                data: {
-                    "userId": userId, "email": email, "QQ": QQ, "telegram": telegram, "skype": skype, "dealUrl": dealUrl
-                },
-                dataType: "json",
-                success: function (data) {
-                    if (0 == data.code) {
-                        layer.msg("修改成功", {icon: 1, time: 2000});
-                        $("#email").attr("style","border-width: 0;background-color:white;").attr("readonly","readonly");
-                        $("#QQ").attr("style","border-width: 0;background-color:white;").attr("readonly","readonly");
-                        $("#telegram").attr("style","border-width: 0;background-color:white;").attr("readonly","readonly");
-                        $("#skype").attr("style","border-width: 0;background-color:white;").attr("readonly","readonly");
-                        $("#dealUrl").attr("style","border-width: 0;background-color:white;").attr("readonly","readonly");
-                        $("#toSave").attr("style", "display:none");
-                        $("#cancel").attr("style", "display:none");
-                        $("#audit").removeAttr("style");
-                    } else {
-                        layer.msg(data.msg, {icon: 2, time: 1000}, function () {
-                        });
-                    }
-                }
-            });
-        });
-    }
-
 </script>
 </body>
 </html>

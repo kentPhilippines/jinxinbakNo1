@@ -5,13 +5,10 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.framework.shiro.service.SysPasswordService;
 import com.ruoyi.framework.util.GoogleUtils;
 import com.ruoyi.framework.util.ShiroUtils;
-import com.ruoyi.system.domain.SysRole;
 import com.ruoyi.system.domain.SysUser;
 import com.ruoyi.system.domain.SysUserGoogle;
 import com.ruoyi.system.service.ISysPostService;
@@ -25,11 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 用户信息
@@ -46,95 +40,6 @@ public class SysUserController extends BaseController {
     @Autowired private SysPasswordService passwordService;
     @Autowired private GoogleUtils googleUtils;
     @Autowired private ISysUserGoogleService sysUserGoogleService;
-    @RequiresPermissions("system:user:view")
-    @GetMapping()
-    public String user() {
-        return prefix + "/user";
-    }
-    @RequiresPermissions("system:user:list")
-    @PostMapping("/list")
-    @ResponseBody
-    public TableDataInfo list(SysUser user) {
-        startPage();
-        List<SysUser> list = userService.selectUserList(user);
-        return getDataTable(list);
-    }
-    @Log(title = "用户管理", businessType = BusinessType.EXPORT)
-    @RequiresPermissions("system:user:export")
-    @PostMapping("/export")
-    @ResponseBody
-    public AjaxResult export(SysUser user) {
-        List<SysUser> list = userService.selectUserList(user);
-        ExcelUtil<SysUser> util = new ExcelUtil<SysUser>(SysUser.class);
-        return util.exportExcel(list, "用户数据");
-    }
-
-    @Log(title = "用户管理", businessType = BusinessType.IMPORT)
-    @RequiresPermissions("system:user:import")
-    @PostMapping("/importData")
-    @ResponseBody
-    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception {
-        ExcelUtil<SysUser> util = new ExcelUtil<SysUser>(SysUser.class);
-        List<SysUser> userList = util.importExcel(file.getInputStream());
-        String operName = ShiroUtils.getSysUser().getLoginName();
-        String message = userService.importUser(userList, updateSupport, operName);
-        return AjaxResult.success(message);
-    }
-
-    @RequiresPermissions("system:user:view")
-    @GetMapping("/importTemplate")
-    @ResponseBody
-    public AjaxResult importTemplate() {
-        ExcelUtil<SysUser> util = new ExcelUtil<SysUser>(SysUser.class);
-        return util.importTemplateExcel("用户数据");
-    }
-
-    static final String ADMIN = "admin";
-    static final String ADMIN_NUMBER = "1";
-
-    /**
-     * 新增用户
-     */
-    @GetMapping("/add")
-    public String add(ModelMap mmap) {
-        List<SysRole> sysRoles = roleService.selectRoleAll();
-        String operName = ShiroUtils.getSysUser().getLoginName();
-        if (!ADMIN.equals(operName)) {
-            List<SysRole> roleList = new ArrayList<>();
-            for (SysRole role : sysRoles) {
-                if (role.getRoleId() == 113) {
-                    roleList.add(role);
-                }
-            }
-            sysRoles = roleList;
-        }
-        mmap.put("roles", sysRoles);
-        mmap.put("posts", postService.selectPostAll());
-        return prefix + "/add";
-    }
-
-    /**
-     * 新增保存用户
-     */
-    @RequiresPermissions("system:user:add")
-    @Log(title = "用户管理", businessType = BusinessType.INSERT)
-    @PostMapping("/add")
-    @ResponseBody
-    public AjaxResult addSave(@Validated SysUser user) {
-        if (UserConstants.USER_NAME_NOT_UNIQUE.equals(userService.checkLoginNameUnique(user.getLoginName()))) {
-            return error("新增用户'" + user.getLoginName() + "'失败，登录账号已存在");
-        } else if (UserConstants.USER_PHONE_NOT_UNIQUE.equals(userService.checkPhoneUnique(user))) {
-            return error("新增用户'" + user.getLoginName() + "'失败，手机号码已存在");
-        } else if (UserConstants.USER_EMAIL_NOT_UNIQUE.equals(userService.checkEmailUnique(user))) {
-            return error("新增用户'" + user.getLoginName() + "'失败，邮箱账号已存在");
-        }
-        user.setSalt(ShiroUtils.randomSalt());
-        user.setPassword(passwordService.encryptPassword(user.getLoginName(), user.getPassword(), user.getSalt()));
-        user.setFundPassword(passwordService.encryptPassword(user.getLoginName(), user.getFundPassword(), user.getSalt()));
-        user.setCreateBy(ShiroUtils.getLoginName());
-        return toAjax(userService.insertUser(user));
-    }
-
     /**
      * 修改用户
      */
@@ -209,24 +114,6 @@ public class SysUserController extends BaseController {
     }
 
     /**
-     * 删除用户
-     *
-     * @param ids 用户ID
-     * @return 结果
-     */
-    @RequiresPermissions("system:user:remove")
-    @Log(title = "用户管理", businessType = BusinessType.DELETE)
-    @PostMapping("/remove")
-    @ResponseBody
-    public AjaxResult remove(String ids, String check) {
-        try {
-            return toAjax(userService.deleteUserByIds(ids, check));
-        } catch (Exception e) {
-            return error(e.getMessage());
-        }
-    }
-
-    /**
      * 校验用户名
      */
     @PostMapping("/checkLoginNameUnique")
@@ -244,26 +131,7 @@ public class SysUserController extends BaseController {
         return userService.checkPhoneUnique(user);
     }
 
-    /**
-     * 校验email邮箱
-     */
-    @PostMapping("/checkEmailUnique")
-    @ResponseBody
-    public String checkEmailUnique(SysUser user) {
-        return userService.checkEmailUnique(user);
-    }
 
-    /**
-     * 用户状态修改
-     */
-    @Log(title = "用户管理", businessType = BusinessType.UPDATE)
-    @RequiresPermissions("system:user:edit")
-    @PostMapping("/changeStatus")
-    @ResponseBody
-    public AjaxResult changeStatus(SysUser user) {
-        userService.checkUserAllowed(user);
-        return toAjax(userService.changeStatus(user));
-    }
 
     /**
      * 用户Google验证器修改
