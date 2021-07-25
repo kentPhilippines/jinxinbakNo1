@@ -1,6 +1,7 @@
 package com.ruoyi.alipay.mapper;
 
 import com.ruoyi.alipay.domain.AlipayAmountEntity;
+
 import java.util.List;
 
 /**
@@ -54,9 +55,11 @@ public interface AlipayAmountEntityMapper
 
     /**
      * 批量删除手动加扣款记录
-     * 
+     *
      * @param ids 需要删除的数据ID
      * @return 结果
      */
     public int deleteAlipayAmountEntityByIds(String[] ids);
+
+    List<AlipayAmountEntity> selectTransferList(AlipayAmountEntity alipayAmountEntity);
 }

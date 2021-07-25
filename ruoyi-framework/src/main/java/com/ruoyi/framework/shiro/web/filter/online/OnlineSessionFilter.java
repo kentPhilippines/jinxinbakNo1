@@ -67,7 +67,6 @@ public class OnlineSessionFilter extends AccessControlFilter {
                     HttpServletRequest req = (HttpServletRequest) request;
                     StringBuffer url = req.getRequestURL();
                     String host = url.delete(url.length() - req.getRequestURI().length(), url.length()).toString();
-
                     SysUser sysUser = sysUserImpl.selectUserByLoginName(user.getLoginName());
                     boolean b = loginIp(sysUser, ShiroUtils.getIp());//ip不在访问进程内
                     if(!b){
@@ -125,6 +124,9 @@ public class OnlineSessionFilter extends AccessControlFilter {
 
     boolean loginIp(SysUser user, String ip) {
         String ips = user.getRemark();
+        if (StrUtil.isEmpty(ips)) {
+            return false;
+        }
         String[] split = ips.split(",");
         boolean contains = Arrays.asList(split).contains(StrUtil.trim(ip));
         return contains;

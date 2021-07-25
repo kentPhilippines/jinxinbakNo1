@@ -1466,6 +1466,9 @@ var table = {
                                 callback(result);
                             }
                             $.operate.successCallback(result);
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            $.operate.successCallback(result);
                         }
                     };
                     $.ajax(config)

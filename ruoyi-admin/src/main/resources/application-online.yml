@@ -1,8 +1,7 @@
 jasypt:
   encryptor:
     password: EWRREWRERWECCCXC
-      algorithm: PBEWithMD5AndDES
-# 数据源配置
+    algorithm: PBEWithMD5AndDES
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
@@ -10,30 +9,30 @@ spring:
     druid:
       # 主库数据源
       master:
-        url: jdbc:mysql://rm-3nss9b6z93e4rk299oo.mysql.rds.aliyuncs.com:3306/otc_admin?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-          username: ENC(ASbHtWW7AAWLrEAtUBJmigSYYPvhLY/4)
-          password: ENC(rvJeIhYegm9BPhEIm+LZYu2FHMW/iRvP)
+        url: jdbc:mysql://35.220.155.53:3306/otc_admin?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: ENC(ASbHtWW7AAWLrEAtUBJmigSYYPvhLY/4)
+        password: ENC(rvJeIhYegm9BPhEIm+LZYu2FHMW/iRvP)
       # alipay从库数据源
       alipay:
         # 从数据源开关/默认关闭
         enabled: true
-        url: jdbc:mysql://rm-3nss9b6z93e4rk299oo.mysql.rds.aliyuncs.com:3306/otc_alipay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-          username: ENC(ASbHtWW7AAWLrEAtUBJmigSYYPvhLY/4)
-          password: ENC(rvJeIhYegm9BPhEIm+LZYu2FHMW/iRvP)
+        url: jdbc:mysql://35.220.155.53:3306/otc_alipay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: ENC(ASbHtWW7AAWLrEAtUBJmigSYYPvhLY/4)
+        password: ENC(rvJeIhYegm9BPhEIm+LZYu2FHMW/iRvP)
       # pay从库数据源
       pay:
         # 从数据源开关/默认关闭
         enabled: false
-        url: jdbc:mysql://rm-3nss9b6z93e4rk299oo.mysql.rds.aliyuncs.com:3306/otc_pay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-          username: ENC(ASbHtWW7AAWLrEAtUBJmigSYYPvhLY/4)
-          password: ENC(rvJeIhYegm9BPhEIm+LZYu2FHMW/iRvP)
+        url: jdbc:mysql://35.220.155.53:3306/otc_pay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: ENC(ASbHtWW7AAWLrEAtUBJmigSYYPvhLY/4)
+        password: ENC(rvJeIhYegm9BPhEIm+LZYu2FHMW/iRvP)
       # dealpay从库数据源
       dealpay:
         # 从数据源开关/默认关闭
         enabled: true
-        url: jdbc:mysql://rm-3nss9b6z93e4rk299oo.mysql.rds.aliyuncs.com:3306/otc_dealpay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-          username: ENC(ASbHtWW7AAWLrEAtUBJmigSYYPvhLY/4)
-          password: ENC(rvJeIhYegm9BPhEIm+LZYu2FHMW/iRvP)
+        url: jdbc:mysql://35.220.155.53:3306/otc_dealpay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: ENC(ASbHtWW7AAWLrEAtUBJmigSYYPvhLY/4)
+        password: ENC(rvJeIhYegm9BPhEIm+LZYu2FHMW/iRvP)
       # 初始连接数
       initialSize: 5
       # 最小连接池数量
@@ -85,7 +84,7 @@ shiro:
     # 验证码开关
     captchaEnabled: true
     # 验证码类型 math 数组计算 char 字符 google 谷歌动态口令
-    captchaType: google
+    captchaType: math
   cookie:
     # 设置Cookie的域名 默认空，即当前访问的域名
     domain:
@@ -94,7 +93,7 @@ shiro:
     # 设置HttpOnly属性
     httpOnly: true
     # 设置Cookie的过期时间，天为单位
-    maxAge: 30
+    maxAge: 1
   session:
     # Session超时时间，-1代表永不过期（默认30分钟）
     expireTime: 30
