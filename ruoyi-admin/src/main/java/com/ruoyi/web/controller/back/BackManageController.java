@@ -1,6 +1,7 @@
 package com.ruoyi.web.controller.back;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -43,6 +44,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,6 +95,7 @@ public class BackManageController extends BaseController {
         mmap.put("userInfo", userInfo);
         return prefix + "/detail";
     }
+
 
     @Autowired
     IAlipayProductService iAlipayProductService;
@@ -171,20 +174,6 @@ public class BackManageController extends BaseController {
         List<AlipayRunOrderEntity> list = alipayRunOrderEntityService.selectAlipayRunOrderEntityList(alipayRunOrderEntity);
         return getDataTable(list);
     }
-
-    /**
-     * 商户保存修改信息
-     *
-     * @param alipayUserInfo
-     * @return
-     */
-    @Log(title = "商户信息", businessType = BusinessType.UPDATE)
-    @PostMapping("/audit")
-    @ResponseBody
-    public AjaxResult toSave(AlipayUserInfo alipayUserInfo) {
-        return toAjax(merchantInfoEntityService.updateMerchantByBackAdmin(alipayUserInfo));
-    }
-
     /**
      * 导出流水订单记录列表
      */
@@ -204,6 +193,8 @@ public class BackManageController extends BaseController {
         ExcelUtil<AlipayRunOrderEntity> util = new ExcelUtil<AlipayRunOrderEntity>(AlipayRunOrderEntity.class);
         return util.exportExcel(list, "running");
     }
+
+    private String MARK = "_";
 
     //商户提现申请
     @GetMapping("/withdrawal/view")
@@ -358,123 +349,20 @@ public class BackManageController extends BaseController {
         return HttpUtils.adminMap2Gateway(mapParam, ipPort + urlPath, extraParam);
     }
 
+    private String RATE_KEY = "usdtrate" + MARK;
+    private Map cache = new ConcurrentHashMap();
 
     /**
-     * 商户发起申请提现
+     * 商户保存修改信息
+     *
+     * @param alipayUserInfo
+     * @return
      */
-    @GetMapping("/recharge")
-    public String recharge(ModelMap mmap) {
-        SysUser sysUser = ShiroUtils.getSysUser();
-        AlipayUserFundEntity alipayUserFundEntity = alipayUserFundEntityService.findAlipayUserFundByUserId(sysUser.getMerchantId());
-        mmap.put("userFund", alipayUserFundEntity);
-        AlipayProductEntity alipayProductEntity = new AlipayProductEntity();
-        alipayProductEntity.setProductId("RECHARGE");
-        List<AlipayProductEntity> list = iAlipayProductService.selectAlipayProductList(alipayProductEntity);
-        if (CollUtil.isNotEmpty(list)) {
-            AlipayProductEntity first = CollUtil.getFirst(list);
-            if (1 == first.getStatus()) {
-                return prefix + "/rechargeLocation";
-            }
-        }
-        return prefix + "/recharge";
-    }
-
-    @GetMapping("/withdrawal/getRateUsdtFee")
+    @Log(title = "商户信息", businessType = BusinessType.UPDATE)
+    @PostMapping("/audit")
     @ResponseBody
-    public AjaxResult getRateUsdtFee(HttpServletRequest request) {
-        String amountCNY = request.getParameter("amountCNY");//人民币充值金额
-        if (StrUtil.isEmpty(amountCNY)) {
-            return AjaxResult.error("数据错误");
-        }
-        SysDictData dictData = new SysDictData();
-        dictData.setDictType("CNY_USDT");//usdt 汇率字典 type
-        List<SysDictData> list = dictDataService.selectDictDataList(dictData);
-        Integer aDouble = Integer.valueOf(amountCNY);
-        for (SysDictData date : list) {
-            String dictLabel = date.getDictLabel();
-            String[] split = dictLabel.split("-");
-            Double min = Double.valueOf(split[0]);//兑换区间最小
-            Double max = Double.valueOf(split[1]);//兑换区间最大  包括
-            if (aDouble > min) {
-                if (aDouble <= max) {
-                    Random ram = new Random();
-                    int i = ram.nextInt(5);
-                    while (i == 0) {
-                        i = ram.nextInt(5);
-                    }
-                    aDouble = aDouble + i;
-                    double v = 0;
-                    try {
-                        Double locatuonRate = Double.valueOf(date.getDictValue());
-                        String smallbull = "https://otc-api-hk.eiijo.cn/v1/data/trade-market?coinId=2&currency=1&tradeType=buy&currPage=1&payMethod=0&acceptOrder=-1&country=&blockType=general&online=1&range=0&amount=";
-                        String rate = getRate(smallbull);
-                        Double onlineRate = Double.valueOf(rate);
-                        v = locatuonRate + onlineRate;
-                    } catch (Exception e) {
-                        return AjaxResult.error("汇率错误");
-                    }
-                    double div = Arith.div(aDouble, v, 2);//当前需要转入的 usdt 个数
-                    Map map = new HashMap();
-                    map.put("amount", div);
-                    map.put("rate", v);
-                    return AjaxResult.success(map);
-                }
-            }
-        }
-        return AjaxResult.error("汇率错误");
-    }
-
-    /**
-     * 保存提现提案
-     */
-    @Log(title = "内充申请-自动回调", businessType = BusinessType.INSERT)
-    @PostMapping("/withdrawal/recharge")
-    @ResponseBody
-    @RepeatSubmit
-    public AjaxResult recharge(AlipayWithdrawEntity alipayWithdrawEntity) {
-        // 获取当前的用户
-        SysUser currentUser = ShiroUtils.getSysUser();
-        String payPassword = (String) alipayWithdrawEntity.getParams().get("payPassword");
-        String verify = passwordService.encryptPassword(currentUser.getLoginName(), payPassword, currentUser.getSalt());
-        if (!currentUser.getFundPassword().equals(verify)) {
-            return AjaxResult.error("密码验证失败");
-        }
-        String userId = currentUser.getMerchantId();
-        AlipayUserRateEntity rateEntity = alipayUserRateEntityService.findRateByType(userId, "RECHARGE");
-        AlipayUserInfo userInfo = new AlipayUserInfo();
-        userInfo.setUserId(userId);
-        List<AlipayUserInfo> alipayUserInfos = merchantInfoEntityService.selectMerchantInfoEntityList(userInfo);
-        SimpleDateFormat d = new SimpleDateFormat("yyyyMMddHHmmss");
-        String userid = rateEntity.getUserId();
-        String key = alipayUserInfos.get(0).getPayPasword();//交易密钥
-        String publicKey = alipayUserInfos.get(0).getPublicKey();
-        String amount = alipayWithdrawEntity.getAmount().toString();
-        String orderId = GenerateOrderNo.getInstance().Generate("USDT");
-        String post = postWit(amount, userid, rateEntity.getPayTypr(), orderId, key, publicKey, alipayWithdrawEntity.getUSDTRate());
-        JSONObject json = JSONObject.parseObject(post);
-        String result = json.getString("success");
-        if (StrUtil.isNotEmpty(result) && result.equals("true")) {
-            //新建常规订单已经成功
-            //下面新建usdt充值订单   使用固定usdt  转人民币内充账号
-            String usdTamount = alipayWithdrawEntity.getUSDTamount();//usdt充值金额
-            AlipayUserInfo userInfokent = new AlipayUserInfo();
-            userInfokent.setUserId("KENTUSDTMANAGE");
-            List<AlipayUserInfo> alipayUserInfokent = merchantInfoEntityService.selectMerchantInfoEntityList(userInfokent);
-            String keykent = alipayUserInfokent.get(0).getPayPasword();//交易密钥
-            String publicKeykent = alipayUserInfokent.get(0).getPublicKey();
-            AlipayUserRateEntity usdt = alipayUserRateEntityService.findRateByType("KENTUSDTMANAGE", "USDT");
-            String kentusdtmanage = postWit(usdTamount, "KENTUSDTMANAGE", usdt.getPayTypr(), orderId, keykent, publicKeykent, alipayWithdrawEntity.getUSDTRate());
-            JSONObject json1 = JSONObject.parseObject(kentusdtmanage);
-            String result1 = json1.getString("success");
-            if (StrUtil.isNotEmpty(result1) && result1.equals("true")) {
-                String result2 = json1.getString("result");
-                JSONObject json2 = JSONObject.parseObject(result2);
-                return AjaxResult.success(json2.getString("returnUrl"));
-            }
-            return AjaxResult.success();
-        } else {
-            return AjaxResult.success();
-        }
+    public AjaxResult toSave(AlipayUserInfo alipayUserInfo) {
+        return toAjax(merchantInfoEntityService.updateMerchantByBackAdmin(alipayUserInfo));
     }
 
     @Log(title = "内充申请-不走自动回调", businessType = BusinessType.INSERT)
@@ -509,35 +397,24 @@ public class BackManageController extends BaseController {
         return postWit(amount, userId, payType, orderId, key, publicKey, null);
     }
 
-    String postWit(String amount, String userId, String payType, String orderId, String key, String publicKey, String url) {
-        Map<String, Object> parMap = new HashMap<>();
-        parMap.put("amount", amount);
-        parMap.put("appId", userId);
-        parMap.put("applyDate", DateUtil.format(new Date(), DatePattern.PURE_DATETIME_PATTERN));
-        parMap.put("notifyUrl", "http://starpay168.com:5055");
-        if (StrUtil.isNotEmpty(url)) {
-            parMap.put("notifyUrl", url);
+    /**
+     * 商户发起申请提现
+     */
+    @GetMapping("/recharge")
+    public String recharge(ModelMap mmap) {
+        SysUser sysUser = ShiroUtils.getSysUser();
+        AlipayUserFundEntity alipayUserFundEntity = alipayUserFundEntityService.findAlipayUserFundByUserId(sysUser.getMerchantId());
+        mmap.put("userFund", alipayUserFundEntity);
+        AlipayProductEntity alipayProductEntity = new AlipayProductEntity();
+        alipayProductEntity.setProductId("RECHARGE");
+        List<AlipayProductEntity> list = iAlipayProductService.selectAlipayProductList(alipayProductEntity);
+        if (CollUtil.isNotEmpty(list)) {
+            AlipayProductEntity first = CollUtil.getFirst(list);
+            if ("0".equals(first.getRetain1())) {
+                return prefix + "/rechargeLocation";
+            }
         }
-        parMap.put("pageUrl", "http://starpay168.com:5055");
-        parMap.put("orderId", orderId);
-        parMap.put("passCode", payType);
-        parMap.put("subject", amount);
-        String createParam = MapDataUtil.createParam(parMap);
-        logger.info("签名前请求串：" + createParam);
-        String md5 = HashKit.md5((createParam + key));
-        logger.info("签名：" + md5);
-        parMap.put("sign", md5);
-        String createParam2 = MapDataUtil.createParam(parMap);
-        logger.info("加密前字符串：" + createParam2);
-        String publicEncrypt = RSAUtils.publicEncrypt(createParam2, publicKey);
-        logger.info("加密后字符串：" + publicEncrypt);
-        Map<String, Object> postMap = new HashMap<String, Object>();
-        postMap.put("cipherText", publicEncrypt);
-        postMap.put("userId", userId);
-        logger.info("请求参数：" + postMap.toString());
-        String post = HttpUtil.post("http://starpay888.org:35426/deal/pay", postMap);
-        logger.info("相应结果集：" + post);
-        return post;
+        return prefix + "/recharge";
     }
 
 
@@ -688,6 +565,136 @@ public class BackManageController extends BaseController {
     public String showTable() {
         return prefix + "/currentTable";
     }
+
+    @GetMapping("/withdrawal/getRateUsdtFee")
+    @ResponseBody
+    public AjaxResult getRateUsdtFee(HttpServletRequest request) {
+        String amountCNY = request.getParameter("amountCNY");//人民币充值金额
+        if (StrUtil.isEmpty(amountCNY)) {
+            return AjaxResult.error("数据错误");
+        }
+        SysDictData dictData = new SysDictData();
+        dictData.setDictType("CNY_USDT");//usdt 汇率字典 type
+        List<SysDictData> list = dictDataService.selectDictDataList(dictData);
+        Integer aDouble = Integer.valueOf(amountCNY);
+        for (SysDictData date : list) {
+            String dictLabel = date.getDictLabel();
+            String[] split = dictLabel.split("-");
+            Double min = Double.valueOf(split[0]);//兑换区间最小
+            Double max = Double.valueOf(split[1]);//兑换区间最大  包括
+            if (aDouble >= min) {
+                if (aDouble <= max) {
+                    Random ram = new Random();
+                    int i = ram.nextInt(5);
+                    while (i == 0) {
+                        i = ram.nextInt(5);
+                    }
+                    aDouble = aDouble + i;
+                    double v = 0;
+                    try {
+                        Double onlineRate = 0.0;
+                        Double locatuonRate = Double.valueOf(date.getDictValue());
+                        onlineRate = Double.valueOf(getRateFee());
+                        v = locatuonRate + onlineRate;
+                    } catch (Exception e) {
+                        return AjaxResult.error("汇率错误");
+                    }
+                    double div = Arith.div(aDouble, v, 2);//当前需要转入的 usdt 个数
+                    Map map = new HashMap();
+                    map.put("amount", div);
+                    map.put("rate", v);
+                    return AjaxResult.success(map);
+                }
+            }
+        }
+        return AjaxResult.error("汇率错误");
+    }
+
+    /**
+     * 保存提现提案
+     */
+    @Log(title = "内充申请-自动回调", businessType = BusinessType.INSERT)
+    @PostMapping("/withdrawal/recharge")
+    @ResponseBody
+    @RepeatSubmit
+    public AjaxResult recharge(AlipayWithdrawEntity alipayWithdrawEntity) {
+        // 获取当前的用户
+        SysUser currentUser = ShiroUtils.getSysUser();
+        String payPassword = (String) alipayWithdrawEntity.getParams().get("payPassword");
+        String verify = passwordService.encryptPassword(currentUser.getLoginName(), payPassword, currentUser.getSalt());
+        if (!currentUser.getFundPassword().equals(verify)) {
+            return AjaxResult.error("密码验证失败");
+        }
+        String userId = currentUser.getMerchantId();
+        AlipayUserRateEntity rateEntity = alipayUserRateEntityService.findRateByType(userId, "RECHARGE");
+        AlipayUserInfo userInfo = new AlipayUserInfo();
+        userInfo.setUserId(userId);
+        List<AlipayUserInfo> alipayUserInfos = merchantInfoEntityService.selectMerchantInfoEntityList(userInfo);
+        SimpleDateFormat d = new SimpleDateFormat("yyyyMMddHHmmss");
+        String userid = rateEntity.getUserId();
+        String key = alipayUserInfos.get(0).getPayPasword();//交易密钥
+        String publicKey = alipayUserInfos.get(0).getPublicKey();
+        String amount = alipayWithdrawEntity.getAmount().toString();
+        String orderId = GenerateOrderNo.getInstance().Generate("USDT_ERC");
+        orderId = orderId + "_" + userId;
+        String post = postWit(amount, userid, rateEntity.getPayTypr(), orderId, key, publicKey, alipayWithdrawEntity.getUSDTRate());
+        JSONObject json = JSONObject.parseObject(post);
+        String result = json.getString("success");
+        if (StrUtil.isNotEmpty(result) && result.equals("true")) {
+            //新建常规订单已经成功
+            //下面新建usdt充值订单   使用固定usdt  转人民币内充账号
+            String usdTamount = alipayWithdrawEntity.getUSDTamount();//usdt充值金额
+            AlipayUserInfo userInfokent = new AlipayUserInfo();
+            userInfokent.setUserId("KENTUSDTMANAGE");
+            List<AlipayUserInfo> alipayUserInfokent = merchantInfoEntityService.selectMerchantInfoEntityList(userInfokent);
+            String keykent = alipayUserInfokent.get(0).getPayPasword();//交易密钥
+            String publicKeykent = alipayUserInfokent.get(0).getPublicKey();
+            AlipayUserRateEntity usdt = alipayUserRateEntityService.findRateByType("KENTUSDTMANAGE", "USDT");
+            String kentusdtmanage = postWit(usdTamount, "KENTUSDTMANAGE", usdt.getPayTypr(), orderId, keykent, publicKeykent, alipayWithdrawEntity.getUSDTRate());
+            JSONObject json1 = JSONObject.parseObject(kentusdtmanage);
+            String result1 = json1.getString("success");
+            if (StrUtil.isNotEmpty(result1) && result1.equals("true")) {
+                String result2 = json1.getString("result");
+                JSONObject json2 = JSONObject.parseObject(result2);
+                return AjaxResult.success(json2.getString("returnUrl"));
+            }
+            return AjaxResult.error("暂无收款地址");
+        } else {
+            return AjaxResult.error("暂无收款地址");
+        }
+    }
+
+    String postWit(String amount, String userId, String payType, String orderId, String key, String publicKey, String url) {
+        Map<String, Object> parMap = new HashMap<>();
+        parMap.put("amount", amount);
+        parMap.put("appId", userId);
+        parMap.put("applyDate", DateUtil.format(new Date(), DatePattern.PURE_DATETIME_PATTERN));
+        parMap.put("notifyUrl", "http://starpay168.com:5055");
+        if (StrUtil.isNotEmpty(url)) {
+            parMap.put("notifyUrl", url);
+        }
+        parMap.put("pageUrl", "http://starpay168.com:5055");
+        parMap.put("orderId", orderId);
+        parMap.put("passCode", payType);
+        parMap.put("subject", amount);
+        String createParam = MapDataUtil.createParam(parMap);
+        logger.info("签名前请求串：" + createParam);
+        String md5 = HashKit.md5((createParam + key));
+        logger.info("签名：" + md5);
+        parMap.put("sign", md5);
+        String createParam2 = MapDataUtil.createParam(parMap);
+        logger.info("加密前字符串：" + createParam2);
+        String publicEncrypt = RSAUtils.publicEncrypt(createParam2, publicKey);
+        logger.info("加密后字符串：" + publicEncrypt);
+        Map<String, Object> postMap = new HashMap<String, Object>();
+        postMap.put("cipherText", publicEncrypt);
+        postMap.put("userId", userId);
+        logger.info("请求参数：" + postMap.toString());
+        String post = HttpUtil.post("http://starpay888.org:35426/deal/pay", postMap);
+        logger.info("相应结果集：" + post);
+        return post;
+    }
+
     /**
      * 后台管理员商户交易订单统计（仅当天数据）
      */
@@ -708,6 +715,35 @@ public class BackManageController extends BaseController {
             }
         }
         return getDataTable(dataList);
+    }
+
+    String getRateFee() {
+        Set<String> set = cache.keySet();
+        for (String key : set) {
+            String[] split = key.split(MARK);
+            String s = split[1];
+            if (DateUtil.isExpired(DateUtil.parse(s).toJdkDate(), DateField.SECOND, 20, new Date())) {
+                cache.remove(key);
+            }
+            ;
+        }
+        Object o = this.cache.get(RATE_KEY + DateUtils.getTime());
+        if (null == o) {
+            String smallbull = "https://otc-api-hk.eiijo.cn/v1/data/trade-market?coinId=2&currency=1&tradeType=buy&currPage=1&payMethod=0&acceptOrder=-1&country=&blockType=general&online=1&range=0&amount=";
+            String rateBull = getRate(smallbull);
+            String smallSell = "https://otc-api-hk.eiijo.cn/v1/data/trade-market?coinId=2&currency=1&tradeType=sell&currPage=1&payMethod=0&acceptOrder=-1&country=&blockType=general&online=1&range=0&amount=";
+            String rateSell = getRate(smallSell);
+            BigDecimal bigDecimal = new BigDecimal(rateBull);
+            BigDecimal bigDecimal1 = new BigDecimal(rateSell);
+            if (bigDecimal.compareTo(bigDecimal1) == -1) {
+                this.cache.put(RATE_KEY + DateUtils.getTime(), rateBull);
+                return rateBull;
+            } else {
+                this.cache.put(RATE_KEY + DateUtils.getTime(), rateSell);
+                return rateSell;
+            }
+        }
+        return null;
     }
 
     String getRate(String url) {

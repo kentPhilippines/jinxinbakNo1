@@ -3,7 +3,6 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.alipay.mapper.AlipayAmountEntityMapper">
-
     <resultMap type="AlipayAmountEntity" id="AlipayAmountEntityResult">
         <result property="id"    column="id"    />
         <result property="orderId"    column="orderId"    />
@@ -22,7 +21,6 @@
         <result property="comment"    column="comment"    />
         <result property="transferUserId" column="transferUserId"/>
     </resultMap>
-
     <sql id="selectAlipayAmountEntityVo">
         select id, orderId, userId, amountType, accname, orderStatus, amount, fee, actualAmount, dealDescribe, createTime, submitTime, status, approval, comment ,   transferUserId from alipay_amount
     </sql>

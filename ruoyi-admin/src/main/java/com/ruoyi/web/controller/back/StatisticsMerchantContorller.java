@@ -1,13 +1,13 @@
 package com.ruoyi.web.controller.back;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.ruoyi.alipay.domain.AlipayUserFundEntity;
-import com.ruoyi.alipay.service.IAlipayDealOrderAppService;
-import com.ruoyi.alipay.service.IAlipayDealOrderEntityService;
-import com.ruoyi.alipay.service.IAlipayUserFundEntityService;
-import com.ruoyi.alipay.service.StatisticService;
+import com.ruoyi.alipay.domain.AlipayUserInfo;
+import com.ruoyi.alipay.service.*;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.BaseEntity;
 import com.ruoyi.common.core.domain.StatisticsEntity;
@@ -46,6 +46,8 @@ public class StatisticsMerchantContorller extends BaseController {
     private IAlipayDealOrderAppService alipayDealOrderAppService;
     @Autowired
     private IAlipayUserFundEntityService alipayUserFundEntityService;
+    @Autowired
+    private IAlipayUserInfoService alipayUserInfoService;
     @Autowired
     private IAlipayDealOrderEntityService alipayDealOrderEntityService;
 
@@ -97,6 +99,19 @@ public class StatisticsMerchantContorller extends BaseController {
     @PostMapping("/merchanthoursList")
     @ResponseBody
     public TableDataInfo merchanthoursList(StatisticsEntity statisticsEntity) {
+        String merchantId = ShiroUtils.getSysUser().getMerchantId();//当前查询商户id
+        if (StrUtil.isEmpty(statisticsEntity.getUserId())) {
+            AlipayUserInfo userInfo = new AlipayUserInfo();
+            userInfo.setAgent(merchantId);
+            List<AlipayUserInfo> alipayUserInfos = alipayUserInfoService.selectAlipayUserInfoList(userInfo);
+            if (CollUtil.isNotEmpty(alipayUserInfos)) {
+                statisticsEntity.setUserId(merchantId);
+            } else {
+                statisticsEntity.setUserAgent(merchantId);
+            }
+        } else {
+            statisticsEntity.setUserAgent(merchantId);
+        }
         startPage();
         List<StatisticsEntity> list = alipayDealOrderAppService.selectMerchantStatisticsDataByHours(statisticsEntity, DateUtils.dayStart(), DateUtils.dayEnd());
         List<AlipayUserFundEntity> listFund = alipayUserFundEntityService.findUserFundAll();

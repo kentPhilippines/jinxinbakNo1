@@ -14,6 +14,7 @@ import com.ruoyi.common.utils.reflect.ReflectUtils;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddressList;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFDataValidation;
 import org.slf4j.Logger;
@@ -81,52 +82,6 @@ public class ExcelUtil<T> {
 
     public ExcelUtil(Class<T> clazz) {
         this.clazz = clazz;
-    }
-
-    /**
-     * 解析导出值 0=男,1=女,2=未知
-     *
-     * @param propertyValue 参数值
-     * @param converterExp  翻译注解
-     * @return 解析后值
-     * @throws Exception
-     */
-    public static String convertByExp(String propertyValue, String converterExp) throws Exception {
-        try {
-            String[] convertSource = converterExp.split(",");
-            for (String item : convertSource) {
-                String[] itemArray = item.split("=");
-                if (itemArray[0].equals(propertyValue)) {
-                    return itemArray[1];
-                }
-            }
-        } catch (Exception e) {
-            throw e;
-        }
-        return propertyValue;
-    }
-
-    /**
-     * 反向解析值 男=0,女=1,未知=2
-     *
-     * @param propertyValue 参数值
-     * @param converterExp  翻译注解
-     * @return 解析后值
-     * @throws Exception
-     */
-    public static String reverseByExp(String propertyValue, String converterExp) throws Exception {
-        try {
-            String[] convertSource = converterExp.split(",");
-            for (String item : convertSource) {
-                String[] itemArray = item.split("=");
-                if (itemArray[1].equals(propertyValue)) {
-                    return itemArray[0];
-                }
-            }
-        } catch (Exception e) {
-            throw e;
-        }
-        return propertyValue;
     }
 
     public void init(List<T> list, String sheetName, Type type) {
@@ -287,53 +242,26 @@ public class ExcelUtil<T> {
     }
 
     /**
-     * 对list数据源将其里面的数据导入到excel表单
+     * 解析导出值 0=男,1=女,2=未知
      *
-     * @return 结果
+     * @param propertyValue 参数值
+     * @param converterExp  翻译注解
+     * @return 解析后值
+     * @throws Exception
      */
-    public AjaxResult exportExcel() {
-        OutputStream out = null;
+    public static String convertByExp(String propertyValue, String converterExp) throws Exception {
         try {
-            // 取出一共有多少个sheet.
-            double sheetNo = Math.ceil(list.size() / sheetSize);
-            for (int index = 0; index <= sheetNo; index++) {
-                createSheet(sheetNo, index);
-
-                // 产生一行
-                Row row = sheet.createRow(0);
-                int column = 0;
-                // 写入各个字段的列头名称
-                for (Object[] os : fields) {
-                    Excel excel = (Excel) os[1];
-                    this.createCell(excel, row, column++);
-                }
-                if (Type.EXPORT.equals(type)) {
-                    fillExcelData(index, row);
+            String[] convertSource = converterExp.split(",");
+            for (String item : convertSource) {
+                String[] itemArray = item.split("=");
+                if (itemArray[0].equals(propertyValue)) {
+                    return itemArray[1];
                 }
             }
-            String filename = encodingFilename(sheetName);
-            out = new FileOutputStream(getAbsoluteFile(filename));
-            wb.write(out);
-            return AjaxResult.success(filename);
         } catch (Exception e) {
-            log.error("导出Excel异常{}", e.getMessage());
-            throw new BusinessException("导出Excel失败，请联系网站管理员！");
-        } finally {
-            if (wb != null) {
-                try {
-                    wb.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-            }
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-            }
+            throw e;
         }
+        return propertyValue;
     }
 
     /**
@@ -542,6 +470,83 @@ public class ExcelUtil<T> {
     }
 
     /**
+     * 反向解析值 男=0,女=1,未知=2
+     *
+     * @param propertyValue 参数值
+     * @param converterExp  翻译注解
+     * @return 解析后值
+     * @throws Exception
+     */
+    public static String reverseByExp(String propertyValue, String converterExp) throws Exception {
+        try {
+            String[] convertSource = converterExp.split(",");
+            for (String item : convertSource) {
+                String[] itemArray = item.split("=");
+                if (itemArray[1].equals(propertyValue)) {
+                    return itemArray[0];
+                }
+            }
+        } catch (Exception e) {
+            throw e;
+        }
+        return propertyValue;
+    }
+
+    /**
+     * 对list数据源将其里面的数据导入到excel表单
+     *
+     * @return 结果
+     */
+    public AjaxResult exportExcel() {
+        OutputStream out = null;
+        try {
+            // 取出一共有多少个sheet.
+            double sheetNo = Math.ceil(list.size() / sheetSize);
+            for (int index = 0; index <= sheetNo; index++) {
+                createSheet(sheetNo, index);
+
+                // 产生一行
+                Row row = sheet.createRow(0);
+                int column = 0;
+                // 写入各个字段的列头名称
+                for (Object[] os : fields) {
+                    Excel excel = (Excel) os[1];
+                    this.createCell(excel, row, column++);
+                }
+                if (Type.EXPORT.equals(type)) {
+                    fillExcelData(index, row);
+                }
+                //每当行数达到设置的值就刷新数据到硬盘,以清理内存
+                if (index % 100 == 0) {
+                    ((SXSSFSheet) sheet).flushRows();
+                }
+            }
+            String filename = encodingFilename(sheetName);
+            out = new FileOutputStream(getAbsoluteFile(filename));
+            wb.write(out);
+            return AjaxResult.success(filename);
+        } catch (Throwable e) {
+            log.error("导出Excel异常{}", e);
+            throw new BusinessException("导出Excel失败，请联系网站管理员！");
+        } finally {
+            if (wb != null) {
+                try {
+                    wb.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
      * 编码文件名
      */
     public String encodingFilename(String filename) {
@@ -644,7 +649,7 @@ public class ExcelUtil<T> {
      * 创建一个工作簿
      */
     public void createWorkbook() {
-        this.wb = new SXSSFWorkbook(500);
+        this.wb = new SXSSFWorkbook(100);
     }
 
     /**

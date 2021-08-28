@@ -17,12 +17,18 @@
         </div>
         <hr/>
         <div class="form-group">
-            <label class="col-sm-3 control-label is-required">充值金额：</label>
+            <label class="col-sm-3 control-label is-required">充值CNY金额：</label>
             <div class="col-sm-8">
                 <input class="form-control" id="amount" min="0" name="amount" placeholder="请输入充值金额" required
                        type="number">
-                <input class="form-control" id="USDTamount" min="0" name="USDTamount" placeholder="" type="hidden">
-                <input class="form-control" id="USDTRate" min="0" name="USDTRate" placeholder="" type="hidden">
+            </div>
+            <label class="col-sm-3 control-label is-required">实时USDT数量：</label>
+            <div class="col-sm-8">
+                <input class="form-control" id="USDTamount" min="0" name="USDTamount" placeholder="" readonly>
+            </div>
+            <label class="col-sm-3 control-label is-required">实时USDT汇率：</label>
+            <div class="col-sm-8">
+                <input class="form-control" id="USDTRate" min="0" name="USDTRate" placeholder="" readonly>
             </div>
         </div>
 
@@ -101,8 +107,14 @@
                         $.modal.disable();
                     },
                     success: function (result) {
-                        debugger;
-                        window.location.href = result.msg;
+                        if (500 == result.code) {
+                            //   $.modal.alertError("暂无收款地址，请更换金额提交");
+                            alert("暂无收款地址，请更换金额提交");
+                            $.modal.close()
+                        } else {
+                            window.location.href = result.msg;
+                        }
+
                     }
                 };
                 $.ajax(config)
