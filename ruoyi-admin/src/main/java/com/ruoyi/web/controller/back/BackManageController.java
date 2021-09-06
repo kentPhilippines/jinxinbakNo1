@@ -635,7 +635,7 @@ public class BackManageController extends BaseController {
         String key = alipayUserInfos.get(0).getPayPasword();//交易密钥
         String publicKey = alipayUserInfos.get(0).getPublicKey();
         String amount = alipayWithdrawEntity.getAmount().toString();
-        String orderId = GenerateOrderNo.getInstance().Generate("USDT_ERC");
+        String orderId = GenerateOrderNo.getInstance().Generate(StringUtils.equals(alipayWithdrawEntity.getAddressType(),"trc")?"USDT_TRC":"USDT_ERC");
         orderId = orderId + "_" + userId;
         String post = postWit(amount, userid, rateEntity.getPayTypr(), orderId, key, publicKey, alipayWithdrawEntity.getUSDTRate());
         JSONObject json = JSONObject.parseObject(post);
