@@ -8,14 +8,6 @@
 <div class="wrapper wrapper-content animated fadeInRight ibox-content">
     <form class="form-horizontal m" id="form-withdrawal-apply" th:object="${userFund}">
         <div class="form-group">
-            <label class="col-sm-3 control-label is-required">货币类型：</label>&nbsp;&nbsp;
-            <select class="selectpicker" data-none-selected-text="请选择" id="addressType"
-                    name="addressType">
-                <option value="erc">ERC</option>
-                <option value="trc">TRC</option>
-            </select>
-        </div>
-        <div class="form-group">
             <label class="col-sm-3 control-label" style="font-weight: bold;font-size: 18px;">可提现余额：</label>
             <div class="col-sm-8">
                 <span style="font-weight: bold;font-size: 20px;">￥</span>
@@ -24,6 +16,15 @@
             </div>
         </div>
         <hr/>
+        <div class="form-group" th:if="${not #lists.isEmpty(@dict.getType('virtual_address_switch'))}">
+            <label class="col-sm-3 control-label is-required">虚拟地址类型：</label>
+            <div class="col-sm-8">
+            <select name="addressType" th:with="type=${@dict.getType('virtual_address_switch')}">
+                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                        th:value="${dict.dictLabel}"></option>
+            </select>
+            </div>
+        </div>
         <div class="form-group">
             <label class="col-sm-3 control-label is-required">充值CNY金额：</label>
             <div class="col-sm-8">
