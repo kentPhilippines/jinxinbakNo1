@@ -410,7 +410,7 @@ public class BackManageController extends BaseController {
         List<AlipayProductEntity> list = iAlipayProductService.selectAlipayProductList(alipayProductEntity);
         if (CollUtil.isNotEmpty(list)) {
             AlipayProductEntity first = CollUtil.getFirst(list);
-            if ("0".equals(first.getRetain1())) {
+            if ("1".equals(first.getRetain1())) {
                 return prefix + "/rechargeLocation";
             }
         }
@@ -568,13 +568,13 @@ public class BackManageController extends BaseController {
 
     @GetMapping("/withdrawal/getRateUsdtFee")
     @ResponseBody
-    public AjaxResult getRateUsdtFee(HttpServletRequest request) {
+    public AjaxResult getRateUsdtFee(HttpServletRequest request,String addressType) {
         String amountCNY = request.getParameter("amountCNY");//人民币充值金额
         if (StrUtil.isEmpty(amountCNY)) {
             return AjaxResult.error("数据错误");
         }
         SysDictData dictData = new SysDictData();
-        dictData.setDictType("CNY_USDT");//usdt 汇率字典 type
+        dictData.setCssClass(addressType);//usdt 汇率字典 type
         List<SysDictData> list = dictDataService.selectDictDataList(dictData);
         Integer aDouble = Integer.valueOf(amountCNY);
         for (SysDictData date : list) {

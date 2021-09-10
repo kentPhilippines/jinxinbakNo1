@@ -37,6 +37,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			<if test="status != null and status != ''">
 				AND status = #{status}
 			</if>
+			<if test="cssClass != null and cssClass != ''">
+				AND css_class = #{cssClass}
+			</if>
 		</where>
 	</select>
 

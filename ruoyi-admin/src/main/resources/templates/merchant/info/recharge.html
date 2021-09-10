@@ -19,10 +19,10 @@
         <div class="form-group" th:if="${not #lists.isEmpty(@dict.getType('virtual_address_switch'))}">
             <label class="col-sm-3 control-label is-required">虚拟地址类型：</label>
             <div class="col-sm-8">
-            <select name="addressType" th:with="type=${@dict.getType('virtual_address_switch')}">
-                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
-                        th:value="${dict.dictLabel}"></option>
-            </select>
+                <select id="addressType" name="addressType" th:with="type=${@dict.getType('virtual_address_switch')}">
+                    <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                            th:value="${dict.dictLabel}"></option>
+                </select>
             </div>
         </div>
         <div class="form-group">
@@ -85,10 +85,13 @@
 
     function fromChange() {
         var amount = $("#amount").val();
+        var addressType = $("#addressType").val();
         $.ajax({
             type: "GET",
             url: prefix + "/withdrawal/getRateUsdtFee?amountCNY=" + $("#amount").val(),
-            data: "",
+            data: {
+                "addressType": addressType
+            },
             dataType: "json",
             success: function (data) {
                 amount = data.data.amount;
