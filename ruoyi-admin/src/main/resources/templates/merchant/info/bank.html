@@ -47,6 +47,7 @@
         </div>
     </div>
     <th:block th:include="include :: footer" />
+     <th:block th:include="include :: select2-js"/>
     <script th:inline="javascript">
         var removeFlag = [[${@permission.hasPermi('back:bank:remove')}]];
         var prefix = ctx + "back/merchant/admin";
