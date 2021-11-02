@@ -292,7 +292,6 @@ public class AccountAppFundApi extends BaseController {
         } catch (Exception ex) {
 
         }
-
     }
 
 
