@@ -64,14 +64,14 @@ public class OnlineSessionFilter extends AccessControlFilter {
                     onlineSession.setAvatar(user.getAvatar());
                     onlineSession.setDeptName(user.getDept().getDeptName());
                     onlineSession.markAttributeChanged();
-                    HttpServletRequest req = (HttpServletRequest) request;
-                    StringBuffer url = req.getRequestURL();
-                    String host = url.delete(url.length() - req.getRequestURI().length(), url.length()).toString();
-                    SysUser sysUser = sysUserImpl.selectUserByLoginName(user.getLoginName());
-                    boolean b = loginIp(sysUser, ShiroUtils.getIp());//ip不在访问进程内
+              //      HttpServletRequest req = (HttpServletRequest) request;
+                  //  StringBuffer url = req.getRequestURL();
+                 //   String host = url.delete(url.length() - req.getRequestURI().length(), url.length()).toString();
+                  //  SysUser sysUser = sysUserImpl.selectUserByLoginName(user.getLoginName());
+                /*    boolean b = loginIp(sysUser, ShiroUtils.getIp());//ip不在访问进程内
                     if(!b){
                         return  b;
-                    }
+                    }*/
                     /**
                      * 当前代码限制 内部人员访问 只能通过  bestpays789.net       来访问
                      * */
@@ -88,11 +88,11 @@ public class OnlineSessionFilter extends AccessControlFilter {
                 if (null == user) {
                     return true;
                 }
-                SysUser sysUser = sysUserImpl.selectUserByLoginName(user.getLoginName());
+           /*     SysUser sysUser = sysUserImpl.selectUserByLoginName(user.getLoginName());
                 boolean b = loginIp(sysUser, ShiroUtils.getIp());//ip不在访问进程内
                 if(!b){
                     return  b;
-                }
+                }*/
             }
 
             if (onlineSession.getStatus() == OnlineStatus.off_line) {
