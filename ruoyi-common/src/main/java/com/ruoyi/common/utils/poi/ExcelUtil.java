@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Excel相关处理
@@ -39,6 +40,8 @@ public class ExcelUtil<T> {
      * Excel sheet最大行数，默认65536
      */
     public static final int sheetSize = 65536;
+    public static final Long MAX_EXPORT_ROWS = 20000L;
+
 
     /**
      * 工作表名称
@@ -85,6 +88,7 @@ public class ExcelUtil<T> {
     }
 
     public void init(List<T> list, String sheetName, Type type) {
+        log.info("【初始化数据导出】");
         if (list == null) {
             list = new ArrayList<T>();
         }
@@ -226,6 +230,9 @@ public class ExcelUtil<T> {
      * @return 结果
      */
     public AjaxResult exportExcel(List<T> list, String sheetName) {
+        log.info("进入数据导出解析");
+        log.info("最大导出数据行数固定：{}",MAX_EXPORT_ROWS);
+        list = list.stream().limit(MAX_EXPORT_ROWS).collect(Collectors.toList());
         this.init(list, sheetName, Type.EXPORT);
         return exportExcel();
     }
@@ -242,26 +249,58 @@ public class ExcelUtil<T> {
     }
 
     /**
-     * 解析导出值 0=男,1=女,2=未知
+     * 对list数据源将其里面的数据导入到excel表单
      *
-     * @param propertyValue 参数值
-     * @param converterExp  翻译注解
-     * @return 解析后值
-     * @throws Exception
+     * @return 结果
      */
-    public static String convertByExp(String propertyValue, String converterExp) throws Exception {
+    public AjaxResult exportExcel() {
+        OutputStream out = null;
         try {
-            String[] convertSource = converterExp.split(",");
-            for (String item : convertSource) {
-                String[] itemArray = item.split("=");
-                if (itemArray[0].equals(propertyValue)) {
-                    return itemArray[1];
+            log.info("进入数据解析，保存到本地");
+            // 取出一共有多少个sheet.
+            double sheetNo = Math.ceil(list.size() / sheetSize);
+            for (int index = 0; index <= sheetNo; index++) {
+                createSheet(sheetNo, index);
+                log.info("产生一行:"+index);
+                // 产生一行
+                Row row = sheet.createRow(0);
+                int column = 0;
+                // 写入各个字段的列头名称
+                for (Object[] os : fields) {
+                    Excel excel = (Excel) os[1];
+                    this.createCell(excel, row, column++);
+                }
+                if (Type.EXPORT.equals(type)) {
+                    fillExcelData(index, row);
+                }
+                //每当行数达到设置的值就刷新数据到硬盘,以清理内存
+                if(index % 5000 == 0){
+                    ((SXSSFSheet)sheet).flushRows();
                 }
             }
-        } catch (Exception e) {
-            throw e;
+            String filename = encodingFilename(sheetName);
+            out = new FileOutputStream(getAbsoluteFile(filename));
+            wb.write(out);
+            return AjaxResult.success(filename);
+        } catch (Throwable e) {
+            log.error("导出Excel异常{}", e);
+            throw new BusinessException("导出Excel失败，请联系网站管理员！");
+        } finally {
+            if (wb != null) {
+                try {
+                    wb.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
         }
-        return propertyValue;
     }
 
     /**
@@ -335,6 +374,7 @@ public class ExcelUtil<T> {
      * 创建单元格
      */
     public Cell createCell(Excel attr, Row row, int column) {
+        log.info("创建单元格："+column);
         // 创建列
         Cell cell = row.createCell(column);
         // 写入列信息
@@ -470,6 +510,29 @@ public class ExcelUtil<T> {
     }
 
     /**
+     * 解析导出值 0=男,1=女,2=未知
+     *
+     * @param propertyValue 参数值
+     * @param converterExp  翻译注解
+     * @return 解析后值
+     * @throws Exception
+     */
+    public static String convertByExp(String propertyValue, String converterExp) throws Exception {
+        try {
+            String[] convertSource = converterExp.split(",");
+            for (String item : convertSource) {
+                String[] itemArray = item.split("=");
+                if (itemArray[0].equals(propertyValue)) {
+                    return itemArray[1];
+                }
+            }
+        } catch (Exception e) {
+            throw e;
+        }
+        return propertyValue;
+    }
+
+    /**
      * 反向解析值 男=0,女=1,未知=2
      *
      * @param propertyValue 参数值
@@ -493,60 +556,6 @@ public class ExcelUtil<T> {
     }
 
     /**
-     * 对list数据源将其里面的数据导入到excel表单
-     *
-     * @return 结果
-     */
-    public AjaxResult exportExcel() {
-        OutputStream out = null;
-        try {
-            // 取出一共有多少个sheet.
-            double sheetNo = Math.ceil(list.size() / sheetSize);
-            for (int index = 0; index <= sheetNo; index++) {
-                createSheet(sheetNo, index);
-
-                // 产生一行
-                Row row = sheet.createRow(0);
-                int column = 0;
-                // 写入各个字段的列头名称
-                for (Object[] os : fields) {
-                    Excel excel = (Excel) os[1];
-                    this.createCell(excel, row, column++);
-                }
-                if (Type.EXPORT.equals(type)) {
-                    fillExcelData(index, row);
-                }
-                //每当行数达到设置的值就刷新数据到硬盘,以清理内存
-                if (index % 100 == 0) {
-                    ((SXSSFSheet) sheet).flushRows();
-                }
-            }
-            String filename = encodingFilename(sheetName);
-            out = new FileOutputStream(getAbsoluteFile(filename));
-            wb.write(out);
-            return AjaxResult.success(filename);
-        } catch (Throwable e) {
-            log.error("导出Excel异常{}", e);
-            throw new BusinessException("导出Excel失败，请联系网站管理员！");
-        } finally {
-            if (wb != null) {
-                try {
-                    wb.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-            }
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        }
-    }
-
-    /**
      * 编码文件名
      */
     public String encodingFilename(String filename) {
@@ -560,6 +569,7 @@ public class ExcelUtil<T> {
      * @param filename 文件名称
      */
     public String getAbsoluteFile(String filename) {
+
         String downloadPath = Global.getDownloadPath() + filename;
         File desc = new File(downloadPath);
         if (!desc.getParentFile().exists()) {
