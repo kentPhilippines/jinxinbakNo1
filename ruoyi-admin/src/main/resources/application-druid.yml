@@ -10,30 +10,30 @@ spring:
     druid:
       # 主库数据源
       master:
-        url: jdbc:mysql://rm-3ns0wdzxpkyk00409qo.mysql.rds.aliyuncs.com:3306/otc_admin?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-        username: ENC(sh43jF9kNKuu43PlDUH0yw==)
-        password: ENC(iH2o0TLI9yxTXVpIIZLQtYcgjEFFcjz99qAKBpYY69U=)
+        url: jdbc:mysql://35.220.247.103:3306/otc_admin?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: ENC(Gcmy5jTbVW0QK0Vhx66Ygg==)
+        password: ENC(7UsC/b0fUcM2hoSYY2SHJU/qEbv2Fp5y)
       # alipay从库数据源
       alipay:
         # 从数据源开关/默认关闭
         enabled: true
-        url: jdbc:mysql://rm-3ns0wdzxpkyk00409qo.mysql.rds.aliyuncs.com:3306/otc_alipay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-        username: ENC(sh43jF9kNKuu43PlDUH0yw==)
-        password: ENC(iH2o0TLI9yxTXVpIIZLQtYcgjEFFcjz99qAKBpYY69U=)
+        url: jdbc:mysql://35.220.247.103:3306/otc_alipay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: ENC(Gcmy5jTbVW0QK0Vhx66Ygg==)
+        password: ENC(7UsC/b0fUcM2hoSYY2SHJU/qEbv2Fp5y)
       # pay从库数据源
       pay:
         # 从数据源开关/默认关闭
         enabled: false
-        url: jdbc:mysql://rm-3ns0wdzxpkyk00409qo.mysql.rds.aliyuncs.com:3306/otc_pay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-        username: ENC(sh43jF9kNKuu43PlDUH0yw==)
-        password: ENC(iH2o0TLI9yxTXVpIIZLQtYcgjEFFcjz99qAKBpYY69U=)
+        url: jdbc:mysql://35.220.247.103:3306/otc_pay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: ENC(Gcmy5jTbVW0QK0Vhx66Ygg==)
+        password: ENC(7UsC/b0fUcM2hoSYY2SHJU/qEbv2Fp5y)
       # dealpay从库数据源
       dealpay:
         # 从数据源开关/默认关闭
         enabled: true
-        url: jdbc:mysql://rm-3ns0wdzxpkyk00409qo.mysql.rds.aliyuncs.com:3306/otc_dealpay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-        username: ENC(sh43jF9kNKuu43PlDUH0yw==)
-        password: ENC(iH2o0TLI9yxTXVpIIZLQtYcgjEFFcjz99qAKBpYY69U=)
+        url: jdbc:mysql://35.220.247.103:3306/otc_dealpay?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: ENC(Gcmy5jTbVW0QK0Vhx66Ygg==)
+        password: ENC(7UsC/b0fUcM2hoSYY2SHJU/qEbv2Fp5y)
       # 初始连接数
       initialSize: 5
       # 最小连接池数量
