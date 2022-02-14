@@ -231,8 +231,8 @@ public class ExcelUtil<T> {
      */
     public AjaxResult exportExcel(List<T> list, String sheetName) {
         log.info("进入数据导出解析");
-        log.info("最大导出数据行数固定：{}",MAX_EXPORT_ROWS);
-        list = list.stream().limit(MAX_EXPORT_ROWS).collect(Collectors.toList());
+        //log.info("最大导出数据行数固定：{}",MAX_EXPORT_ROWS);
+        //list = list.stream().limit(MAX_EXPORT_ROWS).collect(Collectors.toList());
         this.init(list, sheetName, Type.EXPORT);
         return exportExcel();
     }
