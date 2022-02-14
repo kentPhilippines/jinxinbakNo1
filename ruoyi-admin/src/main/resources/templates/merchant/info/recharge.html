@@ -125,7 +125,9 @@
                             alert("暂无收款地址，请更换金额提交");
                             $.modal.close()
                         } else {
-                            window.location.href = result.msg;
+                            $.modal.alertSuccess("请联系运营人员索要TRC/ERC收币地址!当前汇率"+$("#USDTRate").val());
+                            //$.modal.close();
+                            //window.location.href = result.msg;
                         }
 
                     }
