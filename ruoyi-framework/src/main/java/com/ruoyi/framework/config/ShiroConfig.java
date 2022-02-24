@@ -97,6 +97,8 @@ public class ShiroConfig {
     @Value("${spring.redis.password}")
     private String redisPassword;
 
+    @Value("${otc.appName}")
+    private String appName;
 
 
     /**
@@ -134,6 +136,7 @@ public class ShiroConfig {
         }
     }
 */
+
     /**
      * redisManager
      *
@@ -160,10 +163,12 @@ public class ShiroConfig {
         redisCacheManager.setRedisManager(redisManager());
         // 选择属性字段作为缓存标识，这里选择account字段
         redisCacheManager.setPrincipalIdFieldName("userId");
+        redisCacheManager.setKeyPrefix(appName+":"+RedisCacheManager.DEFAULT_CACHE_KEY_PREFIX);
         // 设置信息缓存时间
         redisCacheManager.setExpire(86400);
         return redisCacheManager;
     }
+
     /**
      * 自定义Realm
      */
