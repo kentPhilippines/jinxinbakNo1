@@ -123,7 +123,7 @@
                 </configuration>
 		   </plugin>
         </plugins>
-        <finalName>otc-admin</finalName>
+        <finalName>otc-admin-out</finalName>
     </build>
 
 </project>
