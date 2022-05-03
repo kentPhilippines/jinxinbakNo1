@@ -46,6 +46,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -587,10 +588,10 @@ public class BackManageController extends BaseController {
                     aDouble = aDouble + i;
                     double v = 0;
                     try {
-                        Double onlineRate = 0.0;
-                        Double locatuonRate = Double.valueOf(date.getDictValue());
-                        onlineRate = Double.valueOf(getRateFee());
-                        v = locatuonRate + onlineRate;
+                        BigDecimal onlineRate =new BigDecimal(BigInteger.ZERO);
+                        BigDecimal locatuonRate = BigDecimal.valueOf(Double.valueOf(date.getDictValue()));
+                        onlineRate = BigDecimal.valueOf(Double.valueOf(getRateFee()));
+                        v = onlineRate.add(locatuonRate).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
                     } catch (Exception e) {
                         return AjaxResult.error("汇率错误");
                     }
