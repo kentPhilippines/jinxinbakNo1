@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('批量提现')"/>
+    <th:block th:include="include :: bootstrap-editable-css"/>
+    <style>
+        .bs-bars{
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div style="margin-top: 15px;">
+            <label class="col-sm-3 control-label" style="font-weight: bold;font-size: 18px;">可提现余额：</label>
+            <div class="col-sm-8">
+                <span style="font-weight: bold;font-size: 20px;">￥</span>
+                <span style="font-weight: bold;font-size: 20px;" id="balanceText"
+                      th:text="${#numbers.formatDecimal(userFund.accountBalance,1,'COMMA',4,'POINT')}"></span>
+            </div>
+        </div>
+        <div class="btn-group-sm" id="toolbar" role="group">
+            <div style="float: left">
+               <!-- <a class="btn btn-success" onclick="insertRow()" id="addBtn">
+                    <i class="fa fa-plus"></i>
+                </a>
+                <a class="btn btn-success disabled" id="addBtnHidden" style="display: none">
+                    <i class="fa fa-plus"></i>
+                </a>
+                <a class="btn btn-danger multiple disabled" onclick="removeRow()">
+                    <i class="fa fa-minus"></i>
+                </a>-->
+                <a class="btn btn-success" onclick="validateAndImport();" id="importBtn">
+                    <i class="fa fa-plus">上传导入</i>
+                </a>
+            </div>
+            <div style="float: right">
+                <form id="formId">
+                    <input type="hidden" id="balance" name="balance" th:value="${userFund.accountBalance}">
+                    <input type="hidden" id="noSer" name="noSer" value="">
+                    <input type="hidden" id="count" name="count" value="0">
+                    <div class="select-list">
+                        <ul>
+                            <li>
+                                <label><i style="color: red;">*</i> 资金密码：</label>
+                                <input style="width: 100px" type="password" id="fundPassword" name="fundPassword" placeholder="" maxlength="20"  required/>
+                            </li>
+                            <li>
+                                <label><i style="color: red;">*</i> 谷歌口令：</label>
+                                <input style="width: 100px" type="text" id="googleCode" name="googleCode" placeholder="" maxlength="6" required/>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12 select-table table-striped">
+                <table id="bootstrap-table"></table>
+            </div>
+        </div>
+        <div style="text-align: center;margin-top: -75px;">
+            <div style="text-align: center;">
+                <a id="toSave" name="toSave" class="btn btn-w-m btn-primary" href="javascript:void(0)"
+                   onclick="submitHandler();"> 提交</a>
+                <a id="cancel" name="cancel" class="btn btn-w-m btn-danger" href="javascript:void(0)"
+                   onclick="closeItem();"> 关闭</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <th:block th:include="include :: footer"/>
+    <th:block th:include="include :: bootstrap-table-editable-js"/>
+    <script th:inline="javascript">
+        const withdrawalLimit = [[${@dict.getType('withdrawal-single-limit')}]];
+        const prefix = ctx + "back/merchant/admin";
+
+        $(function () {
+            var options = {
+                importUrl: prefix + "/importData",
+                importTemplateUrl: prefix + "/importTemplate",
+                showSearch: false,
+                showRefresh: false,
+                showToggle: false,
+                showColumns: false,
+                pagination: false,
+                onEditableSave: onEditableSave,
+                columns: [
+                    {
+                        checkbox: true
+                    },
+                    {
+                        field: 'No',
+                        title: '序号'
+                    },
+                    {
+                        field: 'bankNo',
+                        title: '银行卡',
+                        editable: {
+                            type: 'text',
+                            title: '银行卡',
+                            emptytext: "____________",
+                            mode: "inline",
+                            validate: function (value) {
+                                if (value.length > 30) {
+                                    return '银行卡不能超过30个字符';
+                                }
+                                if (value.length == 0) {
+                                    return '开户人不能为空';
+                                }
+                                if (isNaN(Number(value))) {
+                                    return '只能输入数字';
+                                }
+                            }
+                        }
+                    },
+                    {
+                        field: 'accname',
+                        title: '开户人',
+                        editable: {
+                            type: 'text',
+                            title: '开户人',
+                            emptytext: "____________",
+                            mode: "inline",
+                            validate: function (value) {
+                                if (value.length > 30) {
+                                    return '开户人不能超过个字符';
+                                }
+                                if (value.length == 0) {
+                                    return '开户人不能为空';
+                                }
+                            }
+                        }
+                    },
+                    {
+                        field: "bankName",
+                        title: "开户行(例如：中国银行)",
+                        editable: {
+                            type: 'text',
+                            title: '开户行',
+                            emptytext: '____________',
+                            outline: 'none',
+                            showbuttons:true,
+                            mode: "inline",
+                            /*source: function () {
+                                var result = [];
+                                $.ajax({
+                                    url: prefix + '/show/support/bank',
+                                    async: false,
+                                    type: "post",
+                                    data: {"dictType": "system_bankcode"},
+                                    success: function (res, status) {
+                                        $.each(res.data, function (key, value) {
+                                            result.push({ value: value.dictValue +','+ value.dictLabel, text: value.dictLabel });
+                                        });
+                                    }
+                                });
+                                return result;
+                            },*/
+                            validate: function (value) {
+                                if (value.length == 0) {
+                                    return '开户行不能为空';
+                                }
+                            }
+                        }
+                    },
+                    {
+                        field: 'amount',
+                        title: '提现金额',
+                        editable: {
+                            type: 'text',
+                            title: '提现金额',
+                            emptytext: "____________",
+                            mode: "inline",
+                            validate: function (value) {
+                                if (value.length > 11) {
+                                    return '提现金额不能超过11个字符';
+                                }
+                                if (value.length == 0) {
+                                    return '提现金额不能为空';
+                                }
+                                if (isNaN(Number(value))) {
+                                    return '只能输入数字';
+                                }
+                                /*if (value - $.table.selectDictValue(withdrawalLimit, 'minAmount') < 0) {
+                                    return '最小提现金额为' + $.table.selectDictValue(withdrawalLimit, 'minAmount');
+                                }
+                                if (value - $.table.selectDictValue(withdrawalLimit, 'maxAmount') > 0) {
+                                    return '最大提现金额为' + $.table.selectDictValue(withdrawalLimit, 'maxAmount');
+                                }*/
+                                if (deductAmount(value)){
+                                    return "余额不足";
+                                };
+                            }
+                        }
+                    }]
+            };
+            $.table.init(options);
+            insertRow();
+        });
+
+        /* 新增 */
+        function insertRow() {
+            const no = $("#noSer").val();
+            const randomId = 1 + Number(no);
+            const count = $("#count").val();
+            const total = 1 + Number(count);
+            $("#noSer").val(randomId);
+            $("#count").val(total);
+            $("#" + table.options.id).bootstrapTable('insertRow', {
+                index: 11,
+                row: {
+                    No: randomId,
+                    bankNo: '',
+                    accname: '',
+                    bankName: '',
+                    amount: '',
+                }
+            })
+            if (total == 10){
+                $("#addBtn").attr("style","display:none");
+                $("#addBtnHidden").removeAttr("style");
+            }
+        }
+
+        /* 删除 */
+        function removeRow() {
+            var total = $("#count").val();
+            var balance = $("#balance").val();
+            const ids = $.table.selectColumns("No");
+            const amounts = $.table.getRowValue(5);
+            if (ids.length == 0) {
+                $.modal.alertWarning("请至少选择一条记录");
+                return;
+            }
+            if(total == 10){
+                $("#addBtn").removeAttr("style","display:none");
+                $("#addBtnHidden").attr("style","display:none");
+            }
+            $("#count").val(Number(total)-ids.length);
+            $("#" + table.options.id).bootstrapTable('remove', {
+                field: 'No',
+                values: ids
+            })
+            for ( var i = 0, len = amounts.length; i < len; i++) {
+                if(amounts[i] == null || amounts[i] == ''){
+                    return false;
+                }
+                balance = Number.parseFloat(balance) + Number.parseFloat(amounts[i]);
+            }
+            $("#balance").val(Number.parseFloat(balance).toFixed(2));
+            $("#balanceText").html(format(Number(balance)));
+        }
+
+        function onEditableSave (field, row, oldValue, $el) {
+            if(field == 'amount'){
+                var balance = $("#balance").val();
+                var newBalance;
+                if(oldValue == row[field]){
+                    return;
+                }
+                if(oldValue == "" || oldValue == null){
+                    newBalance = Number.parseFloat(balance) - Number.parseFloat(row[field]);
+                }else{
+                    newBalance = Number.parseFloat(balance) + Number.parseFloat(oldValue) - Number.parseFloat(row[field]);
+                }
+
+                $("#balance").val(Number.parseFloat(newBalance).toFixed(2));
+                $("#balanceText").html(format(Number(newBalance)));
+            }
+        }
+
+        function deductAmount(amount) {
+            var balance = $("#balance").val();
+            if (balance - amount < 0){
+                return true;
+            }
+        }
+
+        function format (num) {
+            return (num.toFixed(2) + '').replace(/\d{1,3}(?=(\d{3})+(\.\d*)?$)/g, '$&,');
+
+        }
+        function validateAndImport()
+        {
+            const fundPassword = $("#fundPassword").val();
+            const googleCode = $("#googleCode").val();
+            if(fundPassword ==  null || fundPassword == ""){
+                layer.msg("资金密码不能为空", {icon:2, time:1000});
+                return;
+            }
+            if (googleCode ==  null || googleCode == ""){
+                layer.msg("谷歌动态口令不能为空", {icon:2, time:1000});
+                return;
+            }
+            $.ajax({
+                type: 'POST',
+                url: prefix + '/verifyGoogleCode',
+                dataType: 'json',
+                data: {"fundPassword": fundPassword, "googleCode": googleCode, "vType": "all"},
+                success: function (data) {
+                    //清除密码和谷歌验证码
+                    $("#fundPassword").val("");
+                    $("#googleCode").val("");
+                    if(0 == data.code){//验证通过
+                        $("#toSave").attr("style","display:none");
+                        $.table.importExcel();
+                    }else{//验证失败
+                        layer.msg(data.msg, {icon: 2, time: 2000});
+                    }
+                }
+            });
+
+        }
+        /* 批量-提现-提交 */
+        function submitHandler() {
+            const fundPassword = $("#fundPassword").val();
+            const googleCode = $("#googleCode").val();
+            if(fundPassword ==  null || fundPassword == ""){
+                layer.msg("资金密码不能为空", {icon:2, time:1000});
+                return;
+            }
+            if (googleCode ==  null || googleCode == ""){
+                layer.msg("谷歌动态口令不能为空", {icon:2, time:1000});
+                return;
+            }
+            const dataJson = $("#" + table.options.id).bootstrapTable('getData');
+            const jsonArray = JSON.stringify(dataJson);
+            for(let key in dataJson){
+                if(dataJson[key].bankNo == ""){
+                    layer.msg("记录中【银行卡】不允许为空,请核实",{icon: 2, time: 3000});
+                    return;
+                }
+                if(dataJson[key].accname == ""){
+                    layer.msg("记录中【开户人】不允许为空,请核实",{icon: 2, time: 3000});
+                    return;
+                }
+                if(dataJson[key].bankName == ""){
+                    layer.msg("记录中【开户行】不允许为空,请核实",{icon: 2, time: 3000});
+                    return;
+                }
+                if(dataJson[key].amount == ""){
+                    layer.msg("记录中【提现金额】不允许为空,请核实",{icon: 2, time: 3000});
+                    return;
+                }
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: prefix + '/verifyGoogleCode',
+                dataType: 'json',
+                data: {"fundPassword": fundPassword, "googleCode": googleCode, "vType": "all"},
+                success: function (data) {
+                    //清除密码和谷歌验证码
+                    $("#fundPassword").val("");
+                    $("#googleCode").val("");
+                    if(0 == data.code){//验证通过
+                        $("#toSave").attr("style","display:none");
+                        $.ajax({
+                            type: 'POST',
+                            url: prefix + '/withdrawal/batch/save',
+                            dataType: 'json',
+                            contentType: 'application/json',
+                            data: jsonArray,
+                            beforeSend: function () {
+                                $.modal.loading("正在提交订单中，请勿刷新...");
+                            },
+                            success:function (data) {
+                                if(data.code == 0){
+                                    layer.alert(data.msg, function (index) {
+                                        layer.close(index);
+                                        $.modal.reload();
+                                    });
+                                }else{
+                                    layer.alert(data.msg, function (index) {
+                                        layer.close(index);
+                                        $.modal.closeLoading();
+                                    });
+                                }
+                            }
+                        });
+                    }else{//验证失败
+                        layer.msg(data.msg, {icon: 2, time: 2000});
+                    }
+                }
+            });
+        }
+
+        function importTemplate()
+        {
+            $.get(prefix + "/importTemplate", function (result) {
+                if (result.code == web_status.SUCCESS) {
+                    window.location.href = ctx + "common/download?fileName=" + encodeURI(result.msg) + "&delete=" + true;
+                } else if (result.code == web_status.WARNING) {
+                    $.modal.alertWarning(result.msg)
+                } else {
+                    $.modal.alertError(result.msg);
+                }
+            });
+        }
+    </script>
+<!-- 导入区域 -->
+<script id="importTpl" type="text/template">
+    <form enctype="multipart/form-data" class="mt20 mb10">
+        <div class="col-xs-offset-1">
+            <input type="file" id="file" name="file"/>
+            <div class="mt10 pt5">
+                <!--<input type="checkbox" id="updateSupport" name="updateSupport" title="如果登录账户已经存在，更新这条数据。"> 是否更新已经存在的用户数据-->
+                &nbsp; <a onclick="importTemplate();" class="btn btn-default btn-xs"><i
+                    class="fa fa-file-excel-o"></i> 下载模板</a>
+            </div>
+            <font color="red" class="pull-left mt10">
+                提示：仅允许导入“xls”或“xlsx”格式文件！
+            </font>
+        </div>
+    </form>
+</script>
+</body>
+</html>

@@ -1,7 +1,9 @@
 package com.ruoyi.common.constant;
 
 public interface StaticConstants {
-
+    //缓存参数redisKey
+    public static final String MERCHANT_WITHDRAWAL_PARAMS_KEY = "merchant-withdrawal-params:";
+    public static final String PREFIX_EXCEPTION_ID = "A";
     /**
      * 平台之间调用的加密公钥
      */

@@ -359,7 +359,9 @@ var table = {
                 });
             },
             // 下载模板
+            // 下载模板
             importTemplate: function () {
+                debugger
                 table.set();
                 $.get(table.options.importTemplateUrl, function (result) {
                     if (result.code == web_status.SUCCESS) {
@@ -1253,6 +1255,11 @@ var table = {
             add: function (id) {
                 table.set();
                 $.modal.open("添加" + table.options.modalName, $.operate.addUrl(id));
+            },
+            // 添加信息
+            addBatch: function (id) {
+                table.set();
+                $.modal.open("添加" + table.options.modalName, table.options.createBatchUrl);
             },
             // 商户下级开户
             openAccount: function (id,title,flag) {

@@ -7,8 +7,6 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
@@ -26,9 +24,11 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.enums.WithdrawalStatusEnum;
 import com.ruoyi.common.exception.BusinessException;
 import com.ruoyi.common.utils.*;
+import com.ruoyi.common.utils.bean.WithdrawalBean;
 import com.ruoyi.common.utils.http.HttpUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.framework.shiro.service.SysPasswordService;
+import com.ruoyi.framework.util.AuditLogUtils;
 import com.ruoyi.framework.util.DictionaryUtils;
 import com.ruoyi.framework.util.GoogleUtils;
 import com.ruoyi.framework.util.ShiroUtils;
@@ -36,6 +36,7 @@ import com.ruoyi.system.domain.SysDictData;
 import com.ruoyi.system.domain.SysUser;
 import com.ruoyi.system.service.ISysDictDataService;
 import com.ruoyi.system.service.ISysUserService;
+import com.ruoyi.web.controller.tool.PropertyValidateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -43,8 +44,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
@@ -83,6 +86,8 @@ public class BackManageController extends BaseController {
     private ISysDictDataService dictDataService;
     @Autowired
     private IAlipayProductService alipayProductService;
+    @Autowired
+    private RedisUtil redisUtil;
 
     /**
      * 商户后台用户登陆显示详细信息
@@ -311,11 +316,11 @@ public class BackManageController extends BaseController {
         if (!currentUser.getFundPassword().equals(verify)) {
             return AjaxResult.error("密码验证失败");
         }
-        SysDictData dictData = new SysDictData();
+        /*SysDictData dictData = new SysDictData();
         dictData.setDictType("system_bankcode");
         List<SysDictData> bankcode = dictDataService.selectDictDataList(dictData);
         ConcurrentHashMap<String, SysDictData> bankcodeCollect = bankcode.stream().collect(Collectors.toConcurrentMap(SysDictData::getDictValue, Function.identity(), (o1, o2) -> o1, ConcurrentHashMap::new));
-        SysDictData sysDictData = bankcodeCollect.get(alipayWithdrawEntity.getBankcode());
+        SysDictData sysDictData = bankcodeCollect.get(alipayWithdrawEntity.getBankcode());*/
         //正式环境解注
         //验证谷歌验证码
         String googleCode = alipayWithdrawEntity.getParams().get("googleCode").toString();
@@ -337,8 +342,8 @@ public class BackManageController extends BaseController {
         mapParam.put("acctname", alipayWithdrawEntity.getAccname());
         mapParam.put("apply", currentUser.getLoginName());
         mapParam.put("mobile", alipayWithdrawEntity.getMobile());
-        mapParam.put("bankcode",alipayWithdrawEntity.getBankcode());//后台代付
-        mapParam.put("bankName",sysDictData.getDictLabel());//后台代付
+        mapParam.put("bankcode","ICBC");//后台代付
+        mapParam.put("bankName",alipayWithdrawEntity.getBankName());//后台代付
         mapParam.put("dpaytype", "Bankcard");//银行卡代付类型
         mapParam.put("orderStatus", WithdrawalStatusEnum.WITHDRAWAL_STATUS_PROCESS.getCode());
         mapParam.put("notifyurl", "http://localhost/iiiii");
@@ -394,6 +399,176 @@ public class BackManageController extends BaseController {
         return AjaxResult.success();
     }
 
+    /**
+     * 商户发起申请提现
+     */
+    @GetMapping("/withdrawal/applyBatch")
+    public String applyBatch(ModelMap mmap) {
+        /*SysUser sysUser = ShiroUtils.getSysUser();
+        AlipayUserFundEntity alipayUserFundEntity = alipayUserFundEntityService.findAlipayUserFundByUserId(sysUser.getMerchantId());
+        AlipayBankListEntity alipayBankListEntity = new AlipayBankListEntity();
+        alipayBankListEntity.setAccount(sysUser.getMerchantId());
+        List<AlipayBankListEntity> list = alipayBankListEntityService.selectAlipayBankListEntityList(alipayBankListEntity);
+        mmap.put("bankList", list);
+        mmap.put("userFund", alipayUserFundEntity);
+        SysDictData dictData = new SysDictData();
+        dictData.setDictType("system_bankcode");
+        List<SysDictData> bankcode = dictDataService.selectDictDataList(dictData);
+        mmap.put("bankcode", bankcode);*/
+        SysUser currentUser = ShiroUtils.getSysUser();
+        AlipayUserFundEntity alipayUserFundEntity = alipayUserFundEntityService.findAlipayUserFundByUserId(currentUser.getMerchantId());
+        mmap.put("userFund", alipayUserFundEntity);
+        return prefix + "/applyBatch";
+    }
+    //验证资金密码和谷歌动态口令
+    @PostMapping("/verifyGoogleCode")
+    @ResponseBody
+    public AjaxResult verify(String fundPassword, String googleCode, String vType) {
+        // 获取当前的用户
+        SysUser currentUser = ShiroUtils.getSysUser();
+        int i = 1;
+        if ("all".equals(vType) || "fund".equals(vType)) {
+            String verify = passwordService.encryptPassword(currentUser.getLoginName(), fundPassword, currentUser.getSalt());
+            if (!currentUser.getFundPassword().equals(verify)) {
+                return AjaxResult.error("资金管理密码验证失败");
+            }
+            i = i + 1;
+        }
+        if ("all".equals(vType) || "google".equals(vType)) {
+            //验证谷歌验证码
+            int is = googleUtils.verifyGoogleCode(currentUser.getLoginName(), googleCode);
+            if (is == 0) {
+                return AjaxResult.error("未绑定谷歌验证器，请联系管理员");
+            } else if (is - 1 > 0) {
+                return AjaxResult.error("谷歌动态口令验证失败");
+            }
+            i = i + 1;
+        }
+        if (i > 0) {
+            return AjaxResult.success();
+        } else {
+            return AjaxResult.error("验证失败");
+        }
+    }
+    private AjaxResult batchWithdrawal(List<WithdrawalBean> listBean)
+    {
+        AjaxResult result = null;
+        // 获取当前的用户
+        SysUser currentUser = ShiroUtils.getSysUser();
+        String userId = currentUser.getLoginName();
+        try {
+            // 获取当前线程的方法名
+            String threadName = Thread.currentThread().getStackTrace()[1].getMethodName();
+            // getMethod里面的参数对应updateUserInfo方法的参数，固定形式的，不可少
+            Method method = BackManageController.class.getMethod(threadName, List.class);
+            StringBuffer change = new StringBuffer();
+            change.append("进入提现申请处理方法时间：" + new Date().getTime()).append("\n");
+            int j = 1;
+            for (WithdrawalBean item : listBean) {
+                Map<String, Object> logMap = Collections.synchronizedMap(Maps.newHashMap());
+                logMap.put("appid", currentUser.getMerchantId());
+                logMap.put("amount", item.getAmount());
+                logMap.put("acctno", item.getBankNo());
+                logMap.put("acctname", item.getAccname());
+                logMap.put("bankName", item.getBankName());
+                logMap.put("apply", currentUser.getLoginName());
+                change.append("第" + j + "笔参数").append(logMap.toString()).append("\n");
+                j++;
+            }
+            // 调用修改方法
+            AuditLogUtils.alterAnnotationOn(method, change.toString());
+        } catch (Exception e) {
+            logger.info("动态修改日志错误");
+        }
+        //判断是否有此key
+        boolean isExist = redisUtil.hasKey(StaticConstants.MERCHANT_WITHDRAWAL_PARAMS_KEY + userId);
+        if(!isExist){
+            redisUtil.set(StaticConstants.MERCHANT_WITHDRAWAL_PARAMS_KEY + userId, listBean, 300);
+        } else {
+            List<WithdrawalBean> redisObject = (List<WithdrawalBean>) redisUtil.get(StaticConstants.MERCHANT_WITHDRAWAL_PARAMS_KEY + userId);
+            //对list内容进行比较判断
+            boolean isSame = CommonUtils.compareToList(redisObject, listBean);
+            if(isSame){
+                return AjaxResult.error("5分钟之内不允许连续提交完全相同的下发记录");
+            }else{
+                redisUtil.set(StaticConstants.MERCHANT_WITHDRAWAL_PARAMS_KEY + userId, listBean, 300);
+            }
+        }
+
+        if (listBean.size() > 10) {
+            throw new BusinessException("单次最多提交10笔代付订单");
+        }
+        //获取alipay处理接口URL
+        String ipPort = dictionaryUtils.getApiUrlPath(StaticConstants.ALIPAY_IP_URL_KEY, StaticConstants.ALIPAY_IP_URL_VALUE);
+        String urlPath = dictionaryUtils.getApiUrlPath(StaticConstants.ALIPAY_SERVICE_API_KEY, StaticConstants.ALIPAY_SERVICE_API_VALUE_6);
+        AlipayUserInfo alipayUserInfo = merchantInfoEntityService.selectBackUserByUserId(currentUser.getMerchantId());
+        int successCount = 0;
+        int failCount = 0;
+        for (WithdrawalBean item : listBean) {
+            Map<String, Object> mapParam = Collections.synchronizedMap(Maps.newHashMap());
+            String[] str = item.getBankName().split(",");
+            mapParam.put("appid", currentUser.getMerchantId());
+            mapParam.put("ordertime", new Date());
+            mapParam.put("amount", item.getAmount());
+            mapParam.put("acctno", item.getBankNo());
+            mapParam.put("acctname", item.getAccname());
+            mapParam.put("apply", currentUser.getLoginName());
+            if(str.length>1) {
+                mapParam.put("bankName", str[1]);
+            }else
+            {
+                mapParam.put("bankName", str[0]);
+            }
+            mapParam.put("bankcode", "ICBC");
+            mapParam.put("orderStatus", WithdrawalStatusEnum.WITHDRAWAL_STATUS_PROCESS.getCode());
+            mapParam.put("notifyurl", "http://127.0.0.1/");
+            mapParam.put("apporderid", GenerateOrderNo.getInstance().Generate(StaticConstants.MERCHANT_WITHDRAWAL));
+            logger.info("验签参数：{}", MapDataUtil.createParam(mapParam));
+            mapParam.put("sign", HashKit.md5(MapDataUtil.createParam(mapParam) + alipayUserInfo.getPayPasword()));
+            Map<String, String> extraParam = Maps.newHashMap();
+            extraParam.put("userId", currentUser.getMerchantId());
+            extraParam.put("publicKey", alipayUserInfo.getPublicKey());
+            extraParam.put("manage", "manage");
+            extraParam.put("flag", "true");
+            result = HttpUtils.adminMap2Gateway(mapParam, ipPort + urlPath, extraParam);
+            logger.info("adminMap2Gateway返回的结果：{}", result);
+            //JSONObject jsonObject = (JSONObject) result.get("data");
+            if (Integer.parseInt(result.get("code").toString()) != 0) {
+                failCount += 1;
+                mapParam.put("description", result.get("msg"));
+                mapParam.put("operator", currentUser.getLoginName());
+                mapParam.put("createSystem", "0");//平台系统
+                mapParam.put("orderType", "2");//提现
+                mapParam.put("exceptionId", GenerateOrderNo.getInstance().Generate(StaticConstants.PREFIX_EXCEPTION_ID));
+                //AsyncManager.me().execute(AsyncFactory.recordExceptionOrder(mapParam));
+            } else if (Integer.parseInt(result.get("code").toString()) == 0) {
+                successCount += 1;
+            }
+        }
+        logger.info("商户{}提现订单提交成功【提交成功】订单数：{} >>>" + "【提交失败】订单数：{}", ShiroUtils.getSysUser().getLoginName(), successCount, (listBean.size() - successCount));
+        return AjaxResult.success("已提交成功");
+    }
+    @Log(title = "导入提款信息", businessType = BusinessType.IMPORT)
+    @PostMapping("/importData")
+    @ResponseBody
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception {
+        ExcelUtil<WithdrawalBean> util = new ExcelUtil<WithdrawalBean>(WithdrawalBean.class);
+        List<WithdrawalBean> userList = util.importExcel(file.getInputStream());
+        userList.forEach(user->{
+            PropertyValidateUtil.validate(user);
+        });
+        ;
+        String operName = ShiroUtils.getSysUser().getLoginName();
+
+        return batchWithdrawal(userList);
+    }
+
+    @GetMapping("/importTemplate")
+    @ResponseBody
+    public AjaxResult importTemplate() {
+        ExcelUtil<WithdrawalBean> util = new ExcelUtil<WithdrawalBean>(WithdrawalBean.class);
+        return util.importTemplateExcel("批量提款数据");
+    }
 
     String postWit(String amount, String userId, String payType, String orderId, String key, String publicKey) {
         return postWit(amount, userId, payType, orderId, key, publicKey, null);
