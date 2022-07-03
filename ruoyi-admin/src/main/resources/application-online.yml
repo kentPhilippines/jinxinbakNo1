@@ -5,7 +5,6 @@
 spring:
   redis:
     host: r-3nsnbeyh1ym8vjo2vfpd.redis.rds.aliyuncs.com
-    #host: r-3nsnbeyh1ym8vjo2vf.redis.rds.aliyuncs.com
     port: 6379
     password: kentredis:Bffdasdsdada9ijnasd6
   datasource:
@@ -62,11 +61,11 @@ spring:
       statViewServlet:
         enabled: true
         # 设置白名单，不填则允许所有访问
-        allow:
+        allow: 35.220.155.53
         url-pattern: /druid/*
         # 控制台管理用户名和密码
-        login-username:
-        login-password:
+        login-username: 1231312312312312313
+        login-password: 689uhd9h29h90efh8fech0h
       filter:
         stat:
           enabled: true

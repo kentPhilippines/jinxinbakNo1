@@ -55,8 +55,14 @@
             <a class="btn btn-primary" onclick="$.operate.statistics('统计当天交易订单数据（商户）')" >
                 <i class="fa fa-bar-chart"></i> 当天数据统计
             </a>
+
             <a class="btn btn-warning" onclick="$.table.exportExcel()" <!--shiro:hasPermission="alipay:running:export"-->>
             <i class="fa fa-download"></i> 导出
+            </a>
+
+
+            <a class="btn btn-success" onclick="rechange()">
+                <i class="fa fa-plus"></i> VIP充值
             </a>
         </div>
         <div class="col-sm-12 select-table table-striped">
@@ -119,6 +125,10 @@
             isInitValue: true
         });
     });
+
+    function rechange() {
+        $.modal.open('商户充值', prefix + "/rechargeAdd");
+    }
 </script>
 </body>
 </html>

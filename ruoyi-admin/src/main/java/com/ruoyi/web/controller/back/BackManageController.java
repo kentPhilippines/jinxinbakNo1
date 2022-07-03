@@ -569,6 +569,28 @@ public class BackManageController extends BaseController {
         ExcelUtil<WithdrawalBean> util = new ExcelUtil<WithdrawalBean>(WithdrawalBean.class);
         return util.importTemplateExcel("批量提款数据");
     }
+    @Log(title = "内充申请-人民币手动充值", businessType = BusinessType.INSERT)
+    @PostMapping("/withdrawal/rechargeAddLocation")
+    @ResponseBody
+    @RepeatSubmit
+    public AjaxResult rechargeAddLocation(AlipayWithdrawEntity alipayWithdrawEntity) {
+        // 获取当前的用户
+        SysUser currentUser = ShiroUtils.getSysUser();
+        String userId = currentUser.getMerchantId();
+        AlipayUserRateEntity rateEntity = alipayUserRateEntityService.findRateByType(userId, "BANK_SVIP");
+        AlipayUserInfo userInfo = new AlipayUserInfo();
+        userInfo.setUserId(userId);
+        List<AlipayUserInfo> alipayUserInfos = merchantInfoEntityService.selectMerchantInfoEntityList(userInfo);
+        SimpleDateFormat d = new SimpleDateFormat("yyyyMMddHHmmss");
+        String userid = rateEntity.getUserId();
+        String key = alipayUserInfos.get(0).getPayPasword();//交易密钥
+        String publicKey = alipayUserInfos.get(0).getPublicKey();
+        String amount = alipayWithdrawEntity.getAmount().toString();
+        String orderId = GenerateOrderNo.getInstance().Generate("BANK_SVIP");
+        String post = postWit(amount, userid, rateEntity.getPayTypr(), orderId, key, publicKey);
+        return AjaxResult.success();
+    }
+
 
     String postWit(String amount, String userId, String payType, String orderId, String key, String publicKey) {
         return postWit(amount, userId, payType, orderId, key, publicKey, null);
@@ -594,54 +616,26 @@ public class BackManageController extends BaseController {
         return prefix + "/recharge";
     }
 
+    /**
+     * 商户发起申请提现
+     */
+    @GetMapping("/rechargeAdd")
+    public String rechargeAdd(ModelMap mmap) {
+        SysUser sysUser = ShiroUtils.getSysUser();
+        AlipayUserFundEntity alipayUserFundEntity = alipayUserFundEntityService.findAlipayUserFundByUserId(sysUser.getMerchantId());
+        mmap.put("userFund", alipayUserFundEntity);
+        return prefix + "/rechargeAddLocation";
+    }
+
+
+
+
+
 
     //商户查询银行卡
     @GetMapping("/bank/view")
     public String bankCard() {
         return prefix + "/bank";
-    }
-
-    /**
-     * 查询银行卡列表列表
-     */
-    @PostMapping("/bank/list")
-    @ResponseBody
-    public TableDataInfo list(AlipayBankListEntity alipayBankListEntity) {
-        SysUser sysUser = ShiroUtils.getSysUser();
-        alipayBankListEntity.setAccount(sysUser.getMerchantId());
-        alipayBankListEntity.setCardType(2);
-        startPage();
-        List<AlipayBankListEntity> list = alipayBankListEntityService.selectAlipayBankListEntityList(alipayBankListEntity);
-        return getDataTable(list);
-    }
-
-    /**
-     * 新增银行卡列表
-     */
-    @GetMapping("/bank/add")
-    public String add() {
-        return prefix + "/add";
-    }
-
-    /**
-     * 新增保存银行卡列表
-     */
-    @Log(title = "银行卡列表", businessType = BusinessType.INSERT)
-    @PostMapping("/bank/toSave")
-    @ResponseBody
-    public AjaxResult addSave(AlipayBankListEntity alipayBankListEntity) {
-        alipayBankListEntity.setAccount(ShiroUtils.getSysUser().getMerchantId());
-        return toAjax(alipayBankListEntityService.insertAlipayBankListEntity(alipayBankListEntity));
-    }
-
-    /**
-     * 删除银行卡列表
-     */
-    @Log(title = "银行卡列表", businessType = BusinessType.DELETE)
-    @PostMapping("/bank/remove")
-    @ResponseBody
-    public AjaxResult remove(String ids) {
-        return toAjax(alipayBankListEntityService.deleteAlipayBankListEntityByIds(ids));
     }
 
 

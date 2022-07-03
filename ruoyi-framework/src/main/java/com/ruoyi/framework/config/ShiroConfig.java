@@ -93,9 +93,9 @@ public class ShiroConfig {
 
     @Value("${spring.redis.port}")
     private Integer redisPort;
-
     @Value("${spring.redis.password}")
-    private String redisPassword;
+    private String password;
+
 
     @Value("${otc.appName}")
     private String appName;
@@ -146,7 +146,8 @@ public class ShiroConfig {
         RedisManager redisManager = new RedisManager();
         redisManager.setHost(redisHost);
         redisManager.setPort(redisPort);
-        redisManager.setPassword(redisPassword);
+        redisManager.setDatabase(6);
+        redisManager.setPassword(password);
         // 配置过期时间
 //        redisManager.setExpire(1800);
         return redisManager;
