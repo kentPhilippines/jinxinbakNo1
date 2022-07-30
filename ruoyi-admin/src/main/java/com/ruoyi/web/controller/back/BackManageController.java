@@ -316,11 +316,11 @@ public class BackManageController extends BaseController {
         if (!currentUser.getFundPassword().equals(verify)) {
             return AjaxResult.error("密码验证失败");
         }
-        /*SysDictData dictData = new SysDictData();
+        SysDictData dictData = new SysDictData();
         dictData.setDictType("system_bankcode");
         List<SysDictData> bankcode = dictDataService.selectDictDataList(dictData);
         ConcurrentHashMap<String, SysDictData> bankcodeCollect = bankcode.stream().collect(Collectors.toConcurrentMap(SysDictData::getDictValue, Function.identity(), (o1, o2) -> o1, ConcurrentHashMap::new));
-        SysDictData sysDictData = bankcodeCollect.get(alipayWithdrawEntity.getBankcode());*/
+        SysDictData sysDictData = bankcodeCollect.get(alipayWithdrawEntity.getBankcode());
         //正式环境解注
         //验证谷歌验证码
         String googleCode = alipayWithdrawEntity.getParams().get("googleCode").toString();
@@ -342,8 +342,10 @@ public class BackManageController extends BaseController {
         mapParam.put("acctname", alipayWithdrawEntity.getAccname());
         mapParam.put("apply", currentUser.getLoginName());
         mapParam.put("mobile", alipayWithdrawEntity.getMobile());
-        mapParam.put("bankcode","ICBC");//后台代付
-        mapParam.put("bankName",alipayWithdrawEntity.getBankName());//后台代付
+        mapParam.put("bankcode",alipayWithdrawEntity.getBankcode());//后台代付
+        mapParam.put("bankName",sysDictData.getDictLabel());//后台代付
+//        mapParam.put("bankcode","ICBC");//后台代付
+//        mapParam.put("bankName",alipayWithdrawEntity.getBankName());//后台代付
         mapParam.put("dpaytype", "Bankcard");//银行卡代付类型
         mapParam.put("orderStatus", WithdrawalStatusEnum.WITHDRAWAL_STATUS_PROCESS.getCode());
         mapParam.put("notifyurl", "http://localhost/iiiii");
