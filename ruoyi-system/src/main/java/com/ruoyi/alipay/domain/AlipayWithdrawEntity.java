@@ -1,12 +1,19 @@
 package com.ruoyi.alipay.domain;
 
 import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.alipay.domain.util.DesUtil;
+import com.ruoyi.alipay.domain.util.DesUtil2;
+import com.ruoyi.alipay.domain.util.EncryptHexUtil;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
+import lombok.Data;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -15,6 +22,7 @@ import java.util.Date;
  * @author kiwi
  * @date 2020-03-17
  */
+@Data
 public class AlipayWithdrawEntity extends BaseEntity {
     /* BigDecimal usdt ,   //花费usdt
            price  ,    //汽油价格
@@ -39,113 +47,13 @@ public class AlipayWithdrawEntity extends BaseEntity {
     private String sunCountActualAmount = "0";
     private String addressType;
 
-    public String getSunCountActualAmount() {
-        return sunCountActualAmount;
-    }
 
-    public void setSunCountActualAmount(String sunCountActualAmount) {
-        this.sunCountActualAmount = sunCountActualAmount;
-    }
-
-    public String getSunCountAmountFee() {
-        return sunCountAmountFee;
-    }
-
-    public void setSunCountAmountFee(String sunCountAmountFee) {
-        this.sunCountAmountFee = sunCountAmountFee;
-    }
-
-    public String getSunCountAmount() {
-        return sunCountAmount;
-    }
-
-    public void setSunCountAmount(String sunCountAmount) {
-        this.sunCountAmount = sunCountAmount;
-    }
-
-    public String getUSDTRate() {
-        return USDTRate;
-    }
-
-    public void setUSDTRate(String USDTRate) {
-        this.USDTRate = USDTRate;
-    }
-
-    public String getUSDTamount() {
-        return USDTamount;
-    }
-
-    public void setUSDTamount(String USDTamount) {
-        this.USDTamount = USDTamount;
-    }
-
-    public String getHash() {
-        return hash;
-    }
-
-    public void setHash(String hash) {
-        this.hash = hash;
-    }
-
-    public String getPriceUsdt() {
-        return priceUsdt;
-    }
-
-    public void setPriceUsdt(String priceUsdt) {
-        this.priceUsdt = priceUsdt;
-    }
-
-    public String getEth() {
-        return eth;
-    }
-
-    public void setEth(String eth) {
-        this.eth = eth;
-    }
-
-    public String getUsed() {
-        return used;
-    }
-
-    public void setUsed(String used) {
-        this.used = used;
-    }
-
-    public String getPrice() {
-        return price;
-    }
-
-    public void setPrice(String price) {
-        this.price = price;
-    }
 
     private static final long serialVersionUID = 1L;
     private String bankcode;
     private String appOrderId;
 
-    public String getAppOrderId() {
-        return appOrderId;
-    }
 
-    public void setAppOrderId(String appOrderId) {
-        this.appOrderId = appOrderId;
-    }
-
-    public void setBankcode(String bankcode) {
-        this.bankcode = bankcode;
-    }
-
-    public String getBankcode() {
-        return this.bankcode;
-    }
-
-    public String getAddressType() {
-        return addressType;
-    }
-
-    public void setAddressType(String addressType) {
-        this.addressType = addressType;
-    }
 
     /**
      * 数据id(主键索引)
@@ -191,16 +99,19 @@ public class AlipayWithdrawEntity extends BaseEntity {
      */
     @Excel(name = "提现金额")
     private Double amount;
+    private String amount1;
     /**
      * 手续费
      */
     @Excel(name = "手续费")
     private Double fee;
+    private String fee1;
     /**
      * 真实到账金额
      */
     @Excel(name = "真实到账金额")
     private Double actualAmount;
+    private String actualAmount1;
     /**
      * 手机号
      */
@@ -279,211 +190,66 @@ public class AlipayWithdrawEntity extends BaseEntity {
     @Excel(name = "货币类型")
     private String currency;
 
-    public String getUsdt() {
-        return usdt;
-    }
 
-    public void setUsdt(String usdt) {
-        this.usdt = usdt;
-    }
-
-    public Integer getEthFee() {
-        return ethFee;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public void setEthFee(Integer ethFee) {
-        this.ethFee = ethFee;
-    }
-
-    public String getTxhash() {
-        return txhash;
-    }
-
-    public void setTxhash(String txhash) {
-        this.txhash = txhash;
-    }
 
     /**
      * 审核意见
      */
     @Excel(name = "审核意见")
     private String comment;
+    private String sgin;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
-    }
-
-    public String getOrderId() {
-        return orderId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setWithdrawType(String withdrawType) {
-        this.withdrawType = withdrawType;
-    }
-
-    public String getWithdrawType() {
-        return withdrawType;
-    }
-
-    public String getWitChannel() {
-        return witChannel;
-    }
-
-    public void setWitChannel(String witChannel) {
-        this.witChannel = witChannel;
-    }
-
-    public void setBankNo(String bankNo) {
-        this.bankNo = bankNo;
-    }
 
     public String getBankNo() {
-        return bankNo;
+        if(null != createTime){
+            if( ! getDate (createTime)){
+                return  DesUtil.decryptStr(bankNo);
+            }
+        }
+        return DesUtil2.decryptStr( bankNo);
     }
 
-    public void setAccname(String accname) {
-        this.accname = accname;
-    }
+
 
     public String getAccname() {
-        return accname;
+        return   DesUtil2.decryptStr(accname);
     }
 
-    public void setOrderStatus(String orderStatus) {
-        this.orderStatus = orderStatus;
-    }
 
-    public String getOrderStatus() {
-        return orderStatus;
-    }
 
-    public void setBankName(String bankName) {
-        this.bankName = bankName;
-    }
 
     public String getBankName() {
-        return bankName;
+        if(StrUtil.isNotBlank(bankNo) && getDate (createTime) && StrUtil.isNotEmpty(sgin) ){
+            Boolean click = EncryptHexUtil.click(DesUtil2.decryptStr(bankNo), DesUtil2.decryptStr(bankName), DesUtil2.decryptStr(accname), getAmount() + "", sgin);
+            if(!click){
+                return DesUtil2.decryptStr(bankName) + "  当前存在入侵  ";
+            }
+        }
+        return DesUtil2.decryptStr(bankName);
     }
 
-    public void setAmount(Double amount) {
-        this.amount = amount;
-    }
 
-    public Double getAmount() {
-        return amount;
-    }
-
-    public void setFee(Double fee) {
-        this.fee = fee;
-    }
 
     public Double getFee() {
-        return fee;
+        try {
+            return Double.valueOf(DesUtil2.decryptStr(fee1));
+        }catch (Exception s ){
+            return fee;
+
+        }
+
     }
 
-    public void setActualAmount(Double actualAmount) {
-        this.actualAmount = actualAmount;
-    }
 
     public Double getActualAmount() {
-        return actualAmount;
+        try {
+            return Double.valueOf(DesUtil2.decryptStr(actualAmount1));
+        }catch (Exception e ){
+            return actualAmount;
+        }
     }
 
-    public void setMobile(String mobile) {
-        this.mobile = mobile;
-    }
-
-    public String getMobile() {
-        return mobile;
-    }
-
-    public void setNotify(String notify) {
-        this.notify = notify;
-    }
-
-    public String getNotify() {
-        return notify;
-    }
-
-    public void setSubmitTime(Date submitTime) {
-        this.submitTime = submitTime;
-    }
-
-    public Date getSubmitTime() {
-        return submitTime;
-    }
-
-    public void setStatus(Integer status) {
-        this.status = status;
-    }
-
-    public Integer getStatus() {
-        return status;
-    }
-
-    public void setRetain1(String retain1) {
-        this.retain1 = retain1;
-    }
-
-    public String getRetain1() {
-        return retain1;
-    }
-
-    public void setRetain2(String retain2) {
-        this.retain2 = retain2;
-    }
-
-    public String getRetain2() {
-        return retain2;
-    }
-
-    public String getApply() {
-        return apply;
-    }
-
-    public void setApply(String apply) {
-        this.apply = apply;
-    }
-
-    public String getApproval() {
-        return approval;
-    }
-
-    public void setApproval(String approval) {
-        this.approval = approval;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
 
     @Override
     public Date getCreateTime() {
@@ -520,5 +286,22 @@ public class AlipayWithdrawEntity extends BaseEntity {
                 .append("approval", getApproval())
                 .append("comment", getComment())
                 .toString();
+    }
+
+    private static  Boolean getDate(Date date1){
+        //获取当前时间
+        Calendar date = Calendar.getInstance();
+        date.setTime(date1);
+        //获取开始时间
+        Calendar begin = Calendar.getInstance();
+        begin.setTime(date1);
+        //获取结束时间
+        Calendar end = Calendar.getInstance();
+        end.setTime(DateUtil.parseDate("2022-09-14 00:00:01"));
+        if (date.after(end)){
+            return Boolean.TRUE;
+        }
+        return Boolean.FALSE;
+
     }
 }
