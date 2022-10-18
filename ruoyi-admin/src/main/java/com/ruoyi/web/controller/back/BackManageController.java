@@ -924,9 +924,11 @@ public class BackManageController extends BaseController {
     private String otcRate;
 
     String getRate(String type) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("type", type);
         String post = null;
         try {
-            post = HttpUtil.get(otcRate+"?type="+type);
+            post = HttpUtil.get(otcRate, data);
         } catch (Exception e) {
             logger.error("获取汇率失败", e);
             return null;

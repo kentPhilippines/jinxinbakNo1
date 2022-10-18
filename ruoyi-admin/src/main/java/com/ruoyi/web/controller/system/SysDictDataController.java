@@ -20,6 +20,7 @@ import com.ruoyi.system.domain.SysDictData;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.annotation.Validated;
@@ -37,6 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/system/dict/data")
 public class SysDictDataController extends BaseController {
     private String prefix = "system/dict/data";
+    @Value("${otc.usdt.rate}")
+    private String otcRate;
 
     @Autowired
     private ISysDictDataService dictDataService;
@@ -148,8 +151,7 @@ public class SysDictDataController extends BaseController {
         }
         Object o = this.cache.get(RATE_KEY + DateUtils.getTime());
         if (null == o) {
-            String smallbull = "https://www.pexpay.com/bapi/c2c/v1/friendly/c2c/ad/search";
-            String rate = getRate(smallbull,"buy");
+            String rate = getRate("buy");
             this.cache.put(RATE_KEY + DateUtils.getTime(), rate);
             return rate;
         } else {
@@ -165,37 +167,34 @@ public class SysDictDataController extends BaseController {
          */
         List<HUOBI> list = new ArrayList<HUOBI>();
         HUOBI smalls = new HUOBI();
-        String smallSell = "https://www.pexpay.com/bapi/c2c/v1/friendly/c2c/ad/search";
         smalls.setId("3");
         smalls.setRateType("自选交易购买价格");
-        smalls.setPrice(getRate(smallSell,"sell"));
+        smalls.setPrice(getRate("sell"));
         smalls.setCaeateTime(DateUtils.getTime());
         list.add(smalls);
         HUOBI smallb = new HUOBI();
-        String smallbull = "https://www.pexpay.com/bapi/c2c/v1/friendly/c2c/ad/search";
         smallb.setId("4");
         smallb.setRateType("自选交易出售价格");
-        smallb.setPrice(getRate(smallbull,"buy"));
+        smallb.setPrice(getRate("buy"));
         smallb.setCaeateTime(DateUtils.getTime());
         list.add(smallb);
         return getDataTable(list);
     }
 
 
-    String getRate(String url, String type) {
+    String getRate(String type) {
         Map<String, Object> data = new HashMap<>();
-        data.put("url", url);
         data.put("type", type);
-        String params = JSON.toJSONString(data);
         String post = null;
         try {
-            post = HttpUtil.post("http://34.92.251.112:9998/http/rate", params);
+            post = HttpUtil.get(otcRate, data);
         } catch (Exception e) {
             logger.error("获取汇率失败", e);
             return null;
         }
         return post;
     }
+
 
 
 }
