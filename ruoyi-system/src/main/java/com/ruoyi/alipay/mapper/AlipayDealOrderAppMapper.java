@@ -117,6 +117,9 @@ public interface AlipayDealOrderAppMapper {
             "<if test = \"order.orderStatus != null and order.orderStatus != ''\">" +
             "and orderStatus = #{order.orderStatus} " +
             "</if>" +
+            "<if test = \"order.appOrderId != null and order.appOrderId != ''\">" +
+            "and appOrderId = #{order.appOrderId} " +
+            "</if>" +
             "  and  orderAccount in " +
             "<foreach item='item' index='index' collection='userIds' separator=',' open='(' close=')'>" +
             "#{item}" +

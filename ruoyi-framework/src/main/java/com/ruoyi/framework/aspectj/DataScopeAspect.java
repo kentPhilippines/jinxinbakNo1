@@ -2,6 +2,8 @@ package com.ruoyi.framework.aspectj;
 
 import java.lang.reflect.Method;
 
+import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.Signature;
 import org.aspectj.lang.annotation.Aspect;
@@ -23,6 +25,7 @@ import com.ruoyi.system.domain.SysUser;
  */
 @Aspect
 @Component
+@Slf4j
 public class DataScopeAspect {
     /**
      * 全部数据权限
@@ -90,7 +93,13 @@ public class DataScopeAspect {
     public static void dataScopeFilter(JoinPoint joinPoint, SysUser user, String deptAlias, String userAlias) {
         StringBuilder sqlString = new StringBuilder();
 
-        for (SysRole role : user.getRoles()) {
+        for(int i=0;i<user.getRoles().size();i++)
+        {
+            log.info("class name :{}",JSONUtil.toJsonStr(user.getRoles()));
+            log.info("class name1 :{}", JSONUtil.toJsonStr(user.getRoles().get(i)));
+            SysRole role1 = JSONUtil.toBean(JSONUtil.toJsonStr(user.getRoles().get(i)),SysRole.class);
+            log.info("class name2 :{}", JSONUtil.toJsonStr(role1));
+            SysRole role = role1;
             String dataScope = role.getDataScope();
             if (DATA_SCOPE_ALL.equals(dataScope)) {
                 sqlString = new StringBuilder();
@@ -114,6 +123,7 @@ public class DataScopeAspect {
                 }
             }
         }
+
 
         if (StringUtils.isNotBlank(sqlString.toString())) {
             BaseEntity baseEntity = (BaseEntity) joinPoint.getArgs()[0];
