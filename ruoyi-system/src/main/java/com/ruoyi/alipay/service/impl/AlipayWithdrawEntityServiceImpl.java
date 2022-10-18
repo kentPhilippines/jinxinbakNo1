@@ -21,6 +21,7 @@ import java.util.List;
 public class AlipayWithdrawEntityServiceImpl implements IAlipayWithdrawEntityService {
     @Resource
     private AlipayWithdrawEntityMapper alipayWithdrawEntityMapper;
+
     /**
      * 查询会员提现记录
      *
@@ -92,5 +93,11 @@ public class AlipayWithdrawEntityServiceImpl implements IAlipayWithdrawEntitySer
     @DataSource(value = DataSourceType.ALIPAY_SLAVE)
     public List<AlipayWithdrawEntity> findWitLimit(String starTime, String endTime, Integer page, Integer size) {
         return alipayWithdrawEntityMapper.findWitLimit(starTime, endTime, page, size);
+    }
+
+    @Override
+    @DataSource(value = DataSourceType.ALIPAY_SLAVE)
+    public Integer reEnter(String orderId) {
+        return alipayWithdrawEntityMapper.reEnter(orderId);
     }
 }

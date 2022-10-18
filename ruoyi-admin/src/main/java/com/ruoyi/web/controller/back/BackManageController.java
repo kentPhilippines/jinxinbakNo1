@@ -7,6 +7,8 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
@@ -38,6 +40,7 @@ import com.ruoyi.system.service.ISysDictDataService;
 import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.web.controller.tool.PropertyValidateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -86,8 +89,8 @@ public class BackManageController extends BaseController {
     private ISysDictDataService dictDataService;
     @Autowired
     private IAlipayProductService alipayProductService;
-    @Autowired
-    private RedisUtil redisUtil;
+
+    @Autowired private RedisUtil redisUtil;
 
     /**
      * 商户后台用户登陆显示详细信息
@@ -903,10 +906,8 @@ public class BackManageController extends BaseController {
         }
         Object o = this.cache.get(RATE_KEY + DateUtils.getTime());
         if (null == o) {
-            String smallbull = "https://www.pexpay.com/bapi/c2c/v1/friendly/c2c/ad/search";
-            String rateBull = getRate(smallbull,"buy");
-            String smallSell = "https://www.pexpay.com/bapi/c2c/v1/friendly/c2c/ad/search";
-            String rateSell = getRate(smallSell,"sell");
+            String rateBull = getRate( "buy");
+            String rateSell = getRate( "sell");
             BigDecimal bigDecimal = new BigDecimal(rateBull);
             BigDecimal bigDecimal1 = new BigDecimal(rateSell);
             if (bigDecimal.compareTo(bigDecimal1) == -1) {
@@ -919,15 +920,13 @@ public class BackManageController extends BaseController {
         }
         return null;
     }
+    @Value("${otc.usdt.rate}")
+    private String otcRate;
 
-    String getRate(String url, String type) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("url", url);
-        data.put("type", type);
-        String params = JSON.toJSONString(data);
+    String getRate(String type) {
         String post = null;
         try {
-            post = HttpUtil.post("http://34.92.251.112:9998/http/rate", params);
+            post = HttpUtil.get(otcRate+"?type="+type);
         } catch (Exception e) {
             logger.error("获取汇率失败", e);
             return null;

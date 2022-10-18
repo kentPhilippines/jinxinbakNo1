@@ -54,4 +54,12 @@ public interface IAlipayWithdrawEntityService {
     void updateWitStatus(Long id);
 
     List<AlipayWithdrawEntity> findWitLimit(String starTime, String endTime, Integer page, Integer size);
+
+
+    /**
+     * 确认已到账
+     * @param orderId
+     * @return
+     */
+    Integer reEnter(String orderId);
 }
