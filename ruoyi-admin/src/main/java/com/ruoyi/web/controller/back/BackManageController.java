@@ -840,7 +840,8 @@ public class BackManageController extends BaseController {
             return AjaxResult.error("暂无收款地址");
         }
     }
-
+    @Value("${otc.wit.url}")
+    private String witUrl;
     String postWit(String amount, String userId, String payType, String orderId, String key, String publicKey, String url) {
         Map<String, Object> parMap = new HashMap<>();
         parMap.put("amount", amount);
@@ -867,7 +868,7 @@ public class BackManageController extends BaseController {
         postMap.put("cipherText", publicEncrypt);
         postMap.put("userId", userId);
         logger.info("请求参数：" + postMap.toString());
-        String post = HttpUtil.post("http://starpay888.org:35426/deal/pay", postMap);
+        String post = HttpUtil.post(witUrl, postMap);
         logger.info("相应结果集：" + post);
         return post;
     }
