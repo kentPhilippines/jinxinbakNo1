@@ -104,7 +104,20 @@
         });
 
     }
-
+    function GetRequest(urlString) {
+        debugger;
+        var url = "?" + urlString.split("?")[1];
+        //const url =  urlString; //获取url中"?"符后的字串
+        let theRequest = new Object();
+        if (url.indexOf("?") != -1) {
+            let str = url.substr(1);
+            strs = str.split("&");
+            for(let i = 0; i < strs.length; i ++) {
+                theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
+            }
+        }
+        return theRequest;
+    }
     function submitHandler() {
         if ($.validate.form()) {
             var url = prefix + "/withdrawal/recharge";
@@ -122,11 +135,14 @@
                     success: function (result) {
                         if (500 == result.code) {
                             //   $.modal.alertError("暂无收款地址，请更换金额提交");
-                            alert("暂无收款地址，请更换金额提交");
-                            $.modal.close()
+                            //alert("暂无收款地址，请更换金额提交");
+                            alert(result.msg);
+                            //$.modal.close()
                         } else {
+                            var orderId = GetRequest(result.msg)['orderId'];
                             //$.modal.alertSuccess("请联系运营人员索要TRC/ERC收币地址!当前汇率"+$("#USDTRate").val());
-                            $.modal.alertSuccess("请根据本订单向客服索要TRC/ERC地址，获取自动回调，请转入 "+$("#USDTamount").val()+"数量TRC    当前汇率"+$("#USDTRate").val());
+                            $.modal.alertSuccess("请根据本订单向客服索要TRC/ERC地址，获取自动回调，请转入 "+$("#USDTamount").val()+"数量TRC    当前汇率"+$("#USDTRate").val()+"    <br>当前订单号"+orderId);
+
                             //$.modal.close();
                             //window.location.href = result.msg;
                         }
