@@ -11,6 +11,7 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.google.api.client.util.Lists;
 import com.google.common.collect.Maps;
 import com.ruoyi.alipay.domain.*;
 import com.ruoyi.alipay.domain.util.WitAppExport;
@@ -39,6 +40,7 @@ import com.ruoyi.system.domain.SysUser;
 import com.ruoyi.system.service.ISysDictDataService;
 import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.web.controller.tool.PropertyValidateUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -737,8 +739,16 @@ public class BackManageController extends BaseController {
     /**
      * 显示统计table
      */
-    @GetMapping("/statistics/merchant/admin/table")
+    @GetMapping("/statistics/merchant/admin/tableAgent")
     public String showTable() {
+        return prefix + "/currentTableAgent";
+    }
+
+    /**
+     * 显示统计table
+     */
+    @GetMapping("/statistics/merchant/admin/table")
+    public String showTable1() {
         return prefix + "/currentTable";
     }
 
@@ -880,12 +890,27 @@ public class BackManageController extends BaseController {
     @ResponseBody
     public TableDataInfo dayStat(StatisticsEntity statisticsEntity) {
         SysUser sysUser = ShiroUtils.getSysUser();
+
+        statisticsEntity.setUserAgent(sysUser.getLoginName());
+        //过滤出下级id
+        List<String> subUserIds = merchantInfoEntityService.selectNextAgentByParentId(sysUser.getLoginName());
+//        String userIdStr = subUserIds.get(0)==null ? "":subUserIds.get(0);
+//        userIdStr = userIdStr.replace("$,","");
+        if(CollectionUtils.isNotEmpty(subUserIds)) {
+
+            String[] idArray = subUserIds.get(0).split(",");
+            subUserIds = Arrays.asList(idArray);
+        }else
+        {
+            subUserIds = Lists.newArrayList();
+            subUserIds.add(sysUser.getLoginName());
+        }
         if (StringUtils.isEmpty(sysUser.getMerchantId())) {
             throw new BusinessException("获取商户账户异常，请联系管理员");
         }
         statisticsEntity.setUserId(sysUser.getMerchantId());
         startPage();
-        List<StatisticsEntity> list = alipayDealOrderAppService.selectMerchantStatisticsDataByDay(statisticsEntity, DateUtils.dayStart(), DateUtils.dayEnd());
+        List<StatisticsEntity> list = alipayDealOrderAppService.selectMerchantStatisticsDataByDay(statisticsEntity, DateUtils.dayStart(), DateUtils.dayEnd(), subUserIds);
         List<StatisticsEntity> dataList = new ArrayList();
         for (StatisticsEntity statis : list) {
             if (!statis.getUserId().equals("所有")) {

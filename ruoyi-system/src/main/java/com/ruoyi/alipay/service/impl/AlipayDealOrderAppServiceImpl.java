@@ -75,8 +75,9 @@ public class AlipayDealOrderAppServiceImpl implements IAlipayDealOrderAppService
 
     @Override
     @DataSource(DataSourceType.ALIPAY_SLAVE)
-    public List<StatisticsEntity> selectMerchantStatisticsDataByDay(StatisticsEntity statisticsEntity, String dayStart, String dayEnd) {
-        return alipayDealOrderAppMapper.selectOrderAppStatDateByDay(statisticsEntity, dayStart, dayEnd);
+    public List<StatisticsEntity> selectMerchantStatisticsDataByDay(StatisticsEntity statisticsEntity, String dayStart, String dayEnd,List subUserIds) {
+
+        return alipayDealOrderAppMapper.selectOrderAppStatDateByDay(statisticsEntity, dayStart, dayEnd,subUserIds);
     }
 
     @Override

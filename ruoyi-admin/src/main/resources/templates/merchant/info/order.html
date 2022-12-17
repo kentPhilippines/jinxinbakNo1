@@ -56,6 +56,10 @@
                 <i class="fa fa-bar-chart"></i> 当天数据统计
             </a>
 
+            <a class="btn btn-primary" onclick="$.operate.statistics1('统计当天交易订单数据（商户）')" >
+                <i class="fa fa-bar-chart"></i> 当天数据统计(含代理)
+            </a>
+
             <a class="btn btn-warning" onclick="$.table.exportExcel()" <!--shiro:hasPermission="alipay:running:export"-->>
             <i class="fa fa-download"></i> 导出
             </a>
@@ -80,7 +84,7 @@
     $(function () {
         var options = {
             url: prefix + "/order/list",
-            statisticsUrl: prefix + "/order/statistics",
+            statisticsUrl1: prefix + "/statistics/merchant/admin/tableAgent",
             exportUrl: prefix + "/order/export",
             statisticsUrl: prefix + "/statistics/merchant/admin/table",
             modalName: "商户订单记录",

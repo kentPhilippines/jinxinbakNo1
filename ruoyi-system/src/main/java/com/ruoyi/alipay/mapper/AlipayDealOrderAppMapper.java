@@ -82,10 +82,16 @@ public interface AlipayDealOrderAppMapper {
             "from alipay_deal_order_app app " +
             "where " +
             "  app.createTime between #{statisticsEntity.params.dayStart} " +
+            " and #{statisticsEntity.params.dayEnd} and app.orderType = 1 and app.orderAccount in " +
+                    "<foreach collection='subUserIds' item='item' open='(' separator=',' close=')'>"+
+            "#{item}"+
+            "</foreach>"+
             "<if test = \"statisticsEntity.currency != null and statisticsEntity.currency != ''\">" +
             "and app.currency = #{statisticsEntity.currency} " +
             "</if>" +
-            " and #{statisticsEntity.params.dayEnd} and app.orderType = 1 " +
+//            "<if test = \"statisticsEntity.userAgent != null and statisticsEntity.userAgent != ''\">" +
+//            "and app.orderAccount in (select userId from alipay_user_info where agent = #{statisticsEntity.userAgent}) " +
+//            "</if>" +
             " union all " +
             "select app.orderAccount userId, " +
             "coalesce(sum(app.orderAmount),0.00) totalAmount," +
@@ -97,19 +103,22 @@ public interface AlipayDealOrderAppMapper {
             "from alipay_deal_order_app app " +
             "where " +
             "  app.createTime between #{statisticsEntity.params.dayStart} " +
-            "and #{statisticsEntity.params.dayEnd} and app.orderType = 1 " +
+            "and #{statisticsEntity.params.dayEnd} and app.orderType = 1 and app.orderAccount in " +
+            "<foreach collection='subUserIds' item='item' open='(' separator=',' close=')'>"+
+            "#{item}"+
+            "</foreach>"+
             "<if test = \"statisticsEntity.userId != null and statisticsEntity.userId != ''\">" +
             "and app.orderAccount = #{statisticsEntity.userId} " +
             "</if>" +
-            "<if test = \"statisticsEntity.userAgent != null and statisticsEntity.userAgent != ''\">" +
-            "and app.orderAccount in (select userId from alipay_user_info where agent = #{statisticsEntity.userAgent}) " +
-            "</if>" +
+//            "<if test = \"statisticsEntity.userAgent != null and statisticsEntity.userAgent != ''\">" +
+//            "and app.orderAccount in (select userId from alipay_user_info where agent = #{statisticsEntity.userAgent}) " +
+//            "</if>" +
             "<if test = \"statisticsEntity.currency != null and statisticsEntity.currency != ''\">" +
             "and app.currency = #{statisticsEntity.currency} " +
             "</if>" +
             "group by app.orderAccount " +
             "</script>")
-    List<StatisticsEntity> selectOrderAppStatDateByDay(@Param("statisticsEntity") StatisticsEntity statisticsEntity, @Param("dayStart") String dayStart, @Param("dayEnd") String dayEnd);
+    List<StatisticsEntity> selectOrderAppStatDateByDay(@Param("statisticsEntity") StatisticsEntity statisticsEntity, @Param("dayStart") String dayStart, @Param("dayEnd") String dayEnd,@Param("subUserIds") List subUserIds);
 
     @Select("<script>" +
             "select orderAccount, appOrderId, orderType, orderStatus, createTime, orderAmount , retain1 ,"
@@ -171,4 +180,48 @@ public interface AlipayDealOrderAppMapper {
             " and createTime between #{yesToday}  and #{today} ")
     Double sumDealorderProfit(@Param("yesToday") String yesToday, @Param("today") String today);
 
+    public static void main(String[] args) {
+        String s= "<script>" +
+                "select '所有' userId, " +
+                "coalesce(sum(app.orderAmount),0) totalAmount," +
+                "coalesce(sum(case app.orderStatus when 2 then app.orderAmount else 0 end),0) successAmount," +
+                "count(1) totalCount," +
+                "count(case app.orderStatus when 2 then app.id else null end) successCount ," +
+                "coalesce(sum(app.retain3),0) fee ," +
+                "coalesce(sum(case app.orderStatus when 2 then app.retain3 else 0 end),0) successFee " +
+                "from alipay_deal_order_app app " +
+                "where " +
+                "  app.createTime between #{statisticsEntity.params.dayStart} " +
+                " and #{statisticsEntity.params.dayEnd} and app.orderType = 1 and app.orderAccount in (#{subUserIds})" +
+                "<if test = \"statisticsEntity.currency != null and statisticsEntity.currency != ''\">" +
+                "and app.currency = #{statisticsEntity.currency} " +
+                "</if>" +
+                "<if test = \"statisticsEntity.userAgent != null and statisticsEntity.userAgent != ''\">" +
+                "and app.orderAccount in (select userId from alipay_user_info where agent = #{statisticsEntity.userAgent}) " +
+                "</if>" +
+                " union all " +
+                "select app.orderAccount userId, " +
+                "coalesce(sum(app.orderAmount),0.00) totalAmount," +
+                "coalesce(sum(case app.orderStatus when 2 then app.orderAmount else 0 end),0) successAmount," +
+                "count(1) totalCount," +
+                "count(case app.orderStatus when 2 then app.id else null end) successCount ," +
+                "coalesce(sum(app.retain3),0) fee ," +
+                "coalesce(sum(case app.orderStatus when 2 then app.retain3 else 0 end),0) successFee " +
+                "from alipay_deal_order_app app " +
+                "where " +
+                "  app.createTime between #{statisticsEntity.params.dayStart} " +
+                "and #{statisticsEntity.params.dayEnd} and app.orderType = 1 and app.orderAccount in (#{subUserIds})" +
+                "<if test = \"statisticsEntity.userId != null and statisticsEntity.userId != ''\">" +
+                "and app.orderAccount = #{statisticsEntity.userId} " +
+                "</if>" +
+                "<if test = \"statisticsEntity.userAgent != null and statisticsEntity.userAgent != ''\">" +
+                "and app.orderAccount in (select userId from alipay_user_info where agent = #{statisticsEntity.userAgent}) " +
+                "</if>" +
+                "<if test = \"statisticsEntity.currency != null and statisticsEntity.currency != ''\">" +
+                "and app.currency = #{statisticsEntity.currency} " +
+                "</if>" +
+                "group by app.orderAccount " +
+                "</script>";
+        System.out.println(s);
+    }
 }

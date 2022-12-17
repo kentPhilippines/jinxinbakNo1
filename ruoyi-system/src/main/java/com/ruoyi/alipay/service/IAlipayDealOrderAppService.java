@@ -46,7 +46,7 @@ public interface IAlipayDealOrderAppService {
      * @param dayEnd
      * @return
      */
-    List<StatisticsEntity> selectMerchantStatisticsDataByDay(StatisticsEntity statisticsEntity, String dayStart, String dayEnd);
+    List<StatisticsEntity> selectMerchantStatisticsDataByDay(StatisticsEntity statisticsEntity, String dayStart, String dayEnd,List subUserIds);
 
     List<StatisticsEntity> selectMerchantStatisticsDataByHours(StatisticsEntity statisticsEntity, String dayStart, String dayEnd);
 
