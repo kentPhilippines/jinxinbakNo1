@@ -360,7 +360,7 @@ public class BackManageController extends BaseController {
         extraParam.put("userId", currentUser.getMerchantId());
         extraParam.put("publicKey", alipayUserInfo.getPublicKey());
         extraParam.put("manage", "manage");
-        return HttpUtils.adminMap2Gateway(mapParam, ipPort + urlPath, extraParam);
+        return HttpUtils.adminMap2Gateway(mapParam, ipPort + "/deal/wit", extraParam);
     }
 
     private String RATE_KEY = "usdtrate" + MARK;
@@ -537,7 +537,7 @@ public class BackManageController extends BaseController {
             extraParam.put("publicKey", alipayUserInfo.getPublicKey());
             extraParam.put("manage", "manage");
             extraParam.put("flag", "true");
-            result = HttpUtils.adminMap2Gateway(mapParam, ipPort + urlPath, extraParam);
+            result = HttpUtils.adminMap2Gateway(mapParam, ipPort+ "/deal/wit", extraParam);
             logger.info("adminMap2Gateway返回的结果：{}", result);
             //JSONObject jsonObject = (JSONObject) result.get("data");
             if (Integer.parseInt(result.get("code").toString()) != 0) {
