@@ -2,6 +2,7 @@ package com.ruoyi.alipay.domain;
 
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
+import lombok.Data;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -13,6 +14,7 @@ import java.util.Date;
  * @author kent
  * @date 2020-03-21
  */
+@Data
 public class AlipayUserInfo extends BaseEntity {
     private static final long serialVersionUID = 1L;
     private String findUserId;
@@ -20,6 +22,7 @@ public class AlipayUserInfo extends BaseEntity {
     private Integer autoWit;
     private String enterWitOpen;
     private String interFace;
+    private String witAccount;
 
     public String getInterFace() {
         return interFace;

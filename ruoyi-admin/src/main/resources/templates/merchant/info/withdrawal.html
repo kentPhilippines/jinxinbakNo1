@@ -12,34 +12,34 @@
                 <div class="select-list">
                     <ul>
                         <li>
-                            <span>平台订单：</span>
+                            <label>订单号：</label>
                             <input type="text" name="orderId"/>
                         </li>
                         <li>
-                            <span>商户提现订单：</span>
-                            <input name="appOrderId" type="text"/>
+                            <label>上送订单：</label>
+                            <input type="text" name="orderAppId"/>
                         </li>
                         <li>
-                            <span>申请人：</span>
-                            <input type="text" name="accname"/>
+                            <label>商户账户：</label>
+                            <input type="text" name="name"/>
                         </li>
-                        <li class="select-selectpicker">
-                            <label>订单状态： </label>
-                            <select id="orderStatus" name="orderStatus"
-                                    th:with="type=${@dict.getType('withdrawal_status')}"
-                                    class="selectpicker" data-none-selected-text="请选择">
+                        <li>
+                            <label>订单状态：</label>
+                            <select name="orderStatus"  >
                                 <option value="">所有</option>
-                                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
-                                        th:value="${dict.dictValue}"></option>
+                                <option value="1">审核中</option>
+                                <option value="2">成功</option>
+                                <option value="4">失败</option>
+
                             </select>
                         </li>
                         <li class="select-time">
                             <span>创建时间：</span>
                             <input type="text" class="time-input" id="startTime" placeholder="开始时间"
-                                   name="params[dayStart]"/>
+                                   name="params[beginTime]"/>
                             <span>-</span>
                             <input type="text" class="time-input" id="endTime" placeholder="结束时间"
-                                   name="params[dayEnd]"/>
+                                   name="params[endTime]"/>
                         </li>
                         <li>
                             <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
@@ -53,9 +53,9 @@
         </div>
 
         <div class="btn-group-sm" id="toolbar" role="group">
-            <a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="back:withdrawal:apply">
+            <!--<a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="back:withdrawal:apply">
                 <i class="fa fa-plus"></i> 提现申请
-            </a>
+            </a>-->
             <!--<a class="btn btn-success" onclick="$.operate.addBatch()" shiro:hasPermission="back:withdrawal:apply">
                 <i class="fa fa-plus"></i> 批量提现申请
             </a>-->
@@ -88,7 +88,56 @@
             columns: [{
                 checkbox: true
             },
-                {field: 'orderId', title: '平台订单'},
+                { field: 'orderId', title: '订单号' },
+                { field: 'orderAppId', title: '商户上送订单号'  },
+                { field: 'name', title: '商户id' },
+                { field: 'amount', title: '订单金额' },
+                { field: 'fee', title: '结算费率' },
+                { field: 'info', title: '取款信息'  },
+                {
+                    field: 'orderStatus',
+                    title: '订单状态',
+                    formatter: function (value, row, index) {
+                        var table = '<ul>'
+                        if(row.orderStatus == 2 || row.orderStatus== '2'){
+                            table += '<li>' + '<span class="badge badge-info"> 成功</span>' + '</li>'
+                        }
+                        if(row.orderStatus == 1 || row.orderStatus== '1'){
+                            table += '<li>' + '<span class="badge badge-info"> 审核中</span>' + '</li>'
+                        }
+                        if(row.orderStatus == 4 || row.orderStatus== '4'){
+                            table += '<li>' + '<span class="badge badge-info"> 失败</span>' + '</li>'
+                        }
+                        return table;
+                    }
+                },
+                {
+                    field: 'apply',
+                    title: '描述情况',
+                    formatter: function (value, row, index) {
+                        if (null == value || 'null' == value) {
+                            return "";
+                        }
+                        return value;
+
+                    }
+                },
+                {
+                    field: 'createTime',
+                    title: '创建时间',
+                    formatter: function (value, row, index) {
+                        return $.table.formatDateTime(value);
+                    }
+                },
+
+
+
+
+
+
+
+
+              /*  {field: 'orderId', title: '平台订单'},
                 {field: 'appOrderId', title: '商户提交订单'},
                 {field: 'userId', title: '商户账户'},
                 {field: 'bankNo', title: '银行卡号'},
@@ -106,7 +155,7 @@
                 {field: 'actualAmount', title: '实际到账'},
                 {field: 'mobile', title: '手机号'},
                 {field: 'createTime', title: '创建时间'},
-                {field: 'comment', title: '情况'},
+                {field: 'comment', title: '情况'},*/
               /*  {field: 'enterStatus', title: '到账' ,
                     formatter: function (value, row, index) {
                             if (value == 0) {
@@ -141,29 +190,27 @@
             isInitValue: true
         });
     });
-
-
     function rechange() {
         $.modal.open('商户充值', prefix + "/recharge");
     }
-    /* 状态显示 */
-    function check(row) {
-        var actions = [];
-        if (row.orderStatus === '2' || row.orderStatus === '2') {
-            if(row.enterStatus === 0 || row.enterStatus === '0' ){
-                actions.push('<a class="btn btn-success btn-xs   href="javascript:void(0)" onclick="reEnter(\'' + row.orderId + '\')"><i class="fa fa-shield"></i> 确认到账</a>')
-            }
-        }
-        return actions.join('');
-    }
-
-
     //重新通知
-    function reEnter(orderId) {
-        $.modal.confirm("确认当前代付订单已到账，确认后不可更改！！", function () {
-            $.operate.post(prefix + "/reEnter", {"orderId": orderId});
+    layui.use('laydate', function () {
+        const laydate = layui.laydate;
+        laydate.render({
+            elem: '#startTime',
+            format: 'yyyy-MM-dd HH:mm:ss',
+            type: 'datetime',
+            value: new Date().toLocaleDateString().replace(/\//g, "-") + " 00:00:00",
+            isInitValue: true
         });
-    }
+        laydate.render({
+            elem: '#endTime',
+            format: 'yyyy-MM-dd HH:mm:ss',
+            type: 'datetime',
+            value: new Date().toLocaleDateString().replace(/\//g, "-") + " 23:59:59",
+            isInitValue: true
+        });
+    });
 </script>
 </body>
 </html>

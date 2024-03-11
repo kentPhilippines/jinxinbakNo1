@@ -13,6 +13,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.api.client.util.Lists;
 import com.google.common.collect.Maps;
+import com.ruoyi.UserInfoUtil;
+import com.ruoyi.UserOrderUtil;
 import com.ruoyi.alipay.domain.*;
 import com.ruoyi.alipay.domain.util.WitAppExport;
 import com.ruoyi.alipay.service.*;
@@ -104,7 +106,13 @@ public class BackManageController extends BaseController {
         if (userInfo == null) {
             throw new BusinessException("此商户不存在");
         }
+        UserInfo userWit = UserInfoUtil.selectUserInfoByName(userInfo.getUserId());
+        if (ObjectUtil.isNotNull(userWit)) {
+            userInfo.setWitAccount(userWit.getAmount().toString());
+        }
         mmap.put("userInfo", userInfo);
+
+
         return prefix + "/detail";
     }
 
@@ -224,7 +232,7 @@ public class BackManageController extends BaseController {
     /**
      * 查询商户提现记录列表
      */
-    @PostMapping("/withdrawal/list")
+  /*  @PostMapping("/withdrawal/list")
     @ResponseBody
     public TableDataInfo list(AlipayWithdrawEntity alipayWithdrawEntity) {
         SysUser sysUser = ShiroUtils.getSysUser();
@@ -232,8 +240,24 @@ public class BackManageController extends BaseController {
         startPage();
         List<AlipayWithdrawEntity> list = alipayWithdrawEntityService.selectAlipayWithdrawEntityList(alipayWithdrawEntity);
         return getDataTable(list);
+    }*/
+    @PostMapping("/withdrawal/list")
+    @ResponseBody
+    public TableDataInfo list(UserOrder userOrder) {
+        ReqPage<UserOrder> page = new ReqPage<UserOrder>();
+        page.setData(userOrder);
+        SysUser sysUser = ShiroUtils.getSysUser();
+        userOrder.setName(sysUser.getMerchantId());
+        ResPage<UserOrder> list = UserOrderUtil.selectProductListPage(page);
+        return getDataTablePage(list);
     }
-
+    protected TableDataInfo getDataTablePage(ResPage list) {
+        TableDataInfo rspData = new TableDataInfo();
+        rspData.setCode(0);
+        rspData.setRows(list.getRows());
+        rspData.setTotal(list.getTotal());
+        return rspData;
+    }
     /**
      * 导出流水订单记录列表
      */
@@ -925,7 +949,7 @@ public class BackManageController extends BaseController {
         for (String key : set) {
             String[] split = key.split(MARK);
             String s = split[1];
-            if (DateUtil.isExpired(DateUtil.parse(s).toJdkDate(), DateField.SECOND, 20, new Date())) {
+            if (DateUtil.isExpired(DateUtil.parse(s), DateField.SECOND, 20, new Date())) {
                 cache.remove(key);
             }
             ;

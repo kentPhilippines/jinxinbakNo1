@@ -22,10 +22,10 @@ public class FundTask {
 
     @Scheduled(cron = "0 0 1 * * ?")
     public void fundTask() {
-        reconciliationImpl.fundTask("");
+      //  reconciliationImpl.fundTask("");
         String today = DateUtil.today();
         String format = DatePattern.NORM_DATE_FORMAT.format(DateUtil.offsetDay(DateUtil.parseDateTime(today).toJdkDate(), 1).toJdkDate());
-        HttpUtil.get("http://starpay77.com/accountAppFundApi/orderAccount?starTime=" + format + "&endTime=" + format);
-        HttpUtil.get("http://starpay77.com/accountAppFundApi/fundAccount?starTime=" + format + " 01:00:00");
+       // HttpUtil.get("http://starpay77.com/accountAppFundApi/orderAccount?starTime=" + format + "&endTime=" + format);
+        //HttpUtil.get("http://starpay77.com/accountAppFundApi/fundAccount?starTime=" + format + " 01:00:00");
     }
 }
