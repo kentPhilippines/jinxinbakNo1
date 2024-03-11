@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.alipay.mapper.AlipayRunOrderEntityMapper">
 
-    <resultMap type="AlipayRunOrderEntity" id="AlipayRunOrderEntityResult">
+    <resultMap type="com.ruoyi.alipay.domain.AlipayRunOrderEntity" id="AlipayRunOrderEntityResult">
         <result property="id"    column="id"    />
         <result property="orderId"    column="orderId"    />
         <result property="associatedId"    column="associatedId"    />
@@ -30,7 +30,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         amountNow, retain4, retain5 from alipay_run_order
     </sql>
 
-    <select id="selectAlipayRunOrderEntityList" parameterType="AlipayRunOrderEntity" resultMap="AlipayRunOrderEntityResult">
+    <select id="selectAlipayRunOrderEntityList" parameterType="com.ruoyi.alipay.domain.AlipayRunOrderEntity" resultMap="AlipayRunOrderEntityResult">
         <include refid="selectAlipayRunOrderEntityVo"/>
         <where>
             createTime between #{params.dayStart} and #{params.dayEnd}
@@ -56,7 +56,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where id = #{id}
     </select>
 
-    <insert id="insertAlipayRunOrderEntity" parameterType="AlipayRunOrderEntity" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertAlipayRunOrderEntity" parameterType="com.ruoyi.alipay.domain.AlipayRunOrderEntity" useGeneratedKeys="true" keyProperty="id">
         insert into alipay_run_order
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="orderId != null  and orderId != ''">orderId,</if>
@@ -98,7 +98,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateAlipayRunOrderEntity" parameterType="AlipayRunOrderEntity">
+    <update id="updateAlipayRunOrderEntity" parameterType="com.ruoyi.alipay.domain.AlipayRunOrderEntity">
         update alipay_run_order
         <trim prefix="SET" suffixOverrides=",">
             <if test="orderId != null  and orderId != ''">orderId = #{orderId},</if>

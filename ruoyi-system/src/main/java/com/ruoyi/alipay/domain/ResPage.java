@@ -1,6 +1,6 @@
 package com.ruoyi.alipay.domain;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.ruoyi.alipay.domain.util.Page;
 import lombok.Data;
 
 import java.util.ArrayList;

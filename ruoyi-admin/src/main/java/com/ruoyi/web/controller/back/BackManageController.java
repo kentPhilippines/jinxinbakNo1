@@ -15,6 +15,7 @@ import com.google.api.client.util.Lists;
 import com.google.common.collect.Maps;
 import com.ruoyi.UserInfoUtil;
 import com.ruoyi.UserOrderUtil;
+import com.ruoyi.RunOrderUtil;
 import com.ruoyi.alipay.domain.*;
 import com.ruoyi.alipay.domain.util.WitAppExport;
 import com.ruoyi.alipay.service.*;
@@ -94,7 +95,8 @@ public class BackManageController extends BaseController {
     @Autowired
     private IAlipayProductService alipayProductService;
 
-    @Autowired private RedisUtil redisUtil;
+    @Autowired
+    private RedisUtil redisUtil;
 
     /**
      * 商户后台用户登陆显示详细信息
@@ -168,7 +170,7 @@ public class BackManageController extends BaseController {
         alipayDealOrderApp.setOrderAccount(sysUser.getMerchantId());
         startPage();
         List<AlipayDealOrderApp> list = alipayDealOrderAppService.selectAlipayDealOrderAppList(alipayDealOrderApp);
-        for(AlipayDealOrderApp orderApp : list) {
+        for (AlipayDealOrderApp orderApp : list) {
             orderApp.setFeeId(null);
         }
         ExcelUtil<AlipayDealOrderApp> util = new ExcelUtil<AlipayDealOrderApp>(AlipayDealOrderApp.class);
@@ -182,9 +184,30 @@ public class BackManageController extends BaseController {
         return prefix + "/running";
     }
 
+    @GetMapping("/runningWIt/view")
+    public String runningWit() {
+        return prefix + "/runningWit";
+    }
+
     /**
      * 查询商户的交易流水
      */
+    @PostMapping("/myRunwit")
+    @ResponseBody
+    public TableDataInfo myRunwit(RunOrder runOrder) {
+        SysUser sysUser = ShiroUtils.getSysUser();
+        runOrder.setAccount(sysUser.getMerchantId());
+        UserInfo userWit = UserInfoUtil.selectUserInfoByName(sysUser.getMerchantId());
+        if (ObjectUtil.isNotNull(userWit)) {
+            ResPage<RunOrder> list = new ResPage<>();
+            return getDataTablePage(list);
+        }
+        ReqPage<RunOrder> page = new ReqPage<RunOrder>();
+        page.setData(runOrder);
+        ResPage<RunOrder> list = RunOrderUtil.selectRunOrderListPage(page);
+        return getDataTablePage(list);
+    }
+
     @PostMapping("/running/list")
     @ResponseBody
     public TableDataInfo list(AlipayRunOrderEntity alipayRunOrderEntity) {
@@ -194,6 +217,7 @@ public class BackManageController extends BaseController {
         List<AlipayRunOrderEntity> list = alipayRunOrderEntityService.selectAlipayRunOrderEntityList(alipayRunOrderEntity);
         return getDataTable(list);
     }
+
     /**
      * 导出流水订单记录列表
      */
@@ -211,6 +235,17 @@ public class BackManageController extends BaseController {
             runorder.setAcountR(null);
         }
         ExcelUtil<AlipayRunOrderEntity> util = new ExcelUtil<AlipayRunOrderEntity>(AlipayRunOrderEntity.class);
+        return util.exportExcel(list, "running");
+    }
+
+    @Log(title = "商户资金流水导出", businessType = BusinessType.EXPORT)
+    @PostMapping("/myRunwit/export")
+    @ResponseBody
+    public AjaxResult myRunwiteEport(RunOrder runOrder) {
+        SysUser sysUser = ShiroUtils.getSysUser();
+        runOrder.setAccount(sysUser.getMerchantId());
+        List<RunOrder> list =   RunOrderUtil .selectRunOrderEntityList(runOrder);
+        ExcelUtil<RunOrder> util = new ExcelUtil<RunOrder>(RunOrder.class);
         return util.exportExcel(list, "running");
     }
 
@@ -248,9 +283,15 @@ public class BackManageController extends BaseController {
         page.setData(userOrder);
         SysUser sysUser = ShiroUtils.getSysUser();
         userOrder.setName(sysUser.getMerchantId());
+        UserInfo userWit = UserInfoUtil.selectUserInfoByName(sysUser.getMerchantId());
+        if (ObjectUtil.isNotNull(userWit)) {
+            ResPage<RunOrder> list = new ResPage<>();
+            return getDataTablePage(list);
+        }
         ResPage<UserOrder> list = UserOrderUtil.selectProductListPage(page);
         return getDataTablePage(list);
     }
+
     protected TableDataInfo getDataTablePage(ResPage list) {
         TableDataInfo rspData = new TableDataInfo();
         rspData.setCode(0);
@@ -258,6 +299,7 @@ public class BackManageController extends BaseController {
         rspData.setTotal(list.getTotal());
         return rspData;
     }
+
     /**
      * 导出流水订单记录列表
      */
@@ -371,8 +413,8 @@ public class BackManageController extends BaseController {
         mapParam.put("acctname", alipayWithdrawEntity.getAccname());
         mapParam.put("apply", currentUser.getLoginName());
         mapParam.put("mobile", alipayWithdrawEntity.getMobile());
-        mapParam.put("bankcode",alipayWithdrawEntity.getBankcode());//后台代付
-        mapParam.put("bankName",sysDictData.getDictLabel());//后台代付
+        mapParam.put("bankcode", alipayWithdrawEntity.getBankcode());//后台代付
+        mapParam.put("bankName", sysDictData.getDictLabel());//后台代付
 //        mapParam.put("bankcode","ICBC");//后台代付
 //        mapParam.put("bankName",alipayWithdrawEntity.getBankName());//后台代付
         mapParam.put("dpaytype", "Bankcard");//银行卡代付类型
@@ -451,6 +493,7 @@ public class BackManageController extends BaseController {
         mmap.put("userFund", alipayUserFundEntity);
         return prefix + "/applyBatch";
     }
+
     //验证资金密码和谷歌动态口令
     @PostMapping("/verifyGoogleCode")
     @ResponseBody
@@ -481,8 +524,8 @@ public class BackManageController extends BaseController {
             return AjaxResult.error("验证失败");
         }
     }
-    private AjaxResult batchWithdrawal(List<WithdrawalBean> listBean)
-    {
+
+    private AjaxResult batchWithdrawal(List<WithdrawalBean> listBean) {
         AjaxResult result = null;
         // 获取当前的用户
         SysUser currentUser = ShiroUtils.getSysUser();
@@ -513,15 +556,15 @@ public class BackManageController extends BaseController {
         }
         //判断是否有此key
         boolean isExist = redisUtil.hasKey(StaticConstants.MERCHANT_WITHDRAWAL_PARAMS_KEY + userId);
-        if(!isExist){
+        if (!isExist) {
             redisUtil.set(StaticConstants.MERCHANT_WITHDRAWAL_PARAMS_KEY + userId, listBean, 300);
         } else {
             List<WithdrawalBean> redisObject = (List<WithdrawalBean>) redisUtil.get(StaticConstants.MERCHANT_WITHDRAWAL_PARAMS_KEY + userId);
             //对list内容进行比较判断
             boolean isSame = CommonUtils.compareToList(redisObject, listBean);
-            if(isSame){
+            if (isSame) {
                 return AjaxResult.error("5分钟之内不允许连续提交完全相同的下发记录");
-            }else{
+            } else {
                 redisUtil.set(StaticConstants.MERCHANT_WITHDRAWAL_PARAMS_KEY + userId, listBean, 300);
             }
         }
@@ -544,10 +587,9 @@ public class BackManageController extends BaseController {
             mapParam.put("acctno", item.getBankNo());
             mapParam.put("acctname", item.getAccname());
             mapParam.put("apply", currentUser.getLoginName());
-            if(str.length>1) {
+            if (str.length > 1) {
                 mapParam.put("bankName", str[1]);
-            }else
-            {
+            } else {
                 mapParam.put("bankName", str[0]);
             }
             mapParam.put("bankcode", "ICBC");
@@ -561,7 +603,7 @@ public class BackManageController extends BaseController {
             extraParam.put("publicKey", alipayUserInfo.getPublicKey());
             extraParam.put("manage", "manage");
             extraParam.put("flag", "true");
-            result = HttpUtils.adminMap2Gateway(mapParam, ipPort+ "/deal/wit", extraParam);
+            result = HttpUtils.adminMap2Gateway(mapParam, ipPort + "/deal/wit", extraParam);
             logger.info("adminMap2Gateway返回的结果：{}", result);
             //JSONObject jsonObject = (JSONObject) result.get("data");
             if (Integer.parseInt(result.get("code").toString()) != 0) {
@@ -579,13 +621,14 @@ public class BackManageController extends BaseController {
         logger.info("商户{}提现订单提交成功【提交成功】订单数：{} >>>" + "【提交失败】订单数：{}", ShiroUtils.getSysUser().getLoginName(), successCount, (listBean.size() - successCount));
         return AjaxResult.success("已提交成功");
     }
+
     @Log(title = "导入提款信息", businessType = BusinessType.IMPORT)
     @PostMapping("/importData")
     @ResponseBody
     public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception {
         ExcelUtil<WithdrawalBean> util = new ExcelUtil<WithdrawalBean>(WithdrawalBean.class);
         List<WithdrawalBean> userList = util.importExcel(file.getInputStream());
-        userList.forEach(user->{
+        userList.forEach(user -> {
             PropertyValidateUtil.validate(user);
         });
         ;
@@ -600,6 +643,7 @@ public class BackManageController extends BaseController {
         ExcelUtil<WithdrawalBean> util = new ExcelUtil<WithdrawalBean>(WithdrawalBean.class);
         return util.importTemplateExcel("批量提款数据");
     }
+
     @Log(title = "内充申请-人民币手动充值", businessType = BusinessType.INSERT)
     @PostMapping("/withdrawal/rechargeAddLocation")
     @ResponseBody
@@ -659,10 +703,6 @@ public class BackManageController extends BaseController {
     }
 
 
-
-
-
-
     //商户查询银行卡
     @GetMapping("/bank/view")
     public String bankCard() {
@@ -691,8 +731,8 @@ public class BackManageController extends BaseController {
             list1.remove(0);
             list1.remove(0);
         }
-        if(StrUtil.isNotBlank(alipayUserInfo.getUserId())) {
-            if(list1.contains(alipayUserInfo.getUserId())) {
+        if (StrUtil.isNotBlank(alipayUserInfo.getUserId())) {
+            if (list1.contains(alipayUserInfo.getUserId())) {
                 list1.clear();
                 list1 = new ArrayList();
                 list1.add(alipayUserInfo.getUserId());
@@ -709,11 +749,14 @@ public class BackManageController extends BaseController {
         return prefix + "/agent_order";
     }
 
-    @Autowired private ISysUserService userService;
+    @Autowired
+    private ISysUserService userService;
     /**
      * 查询商户订单
      */
-    @Autowired IMerchantInfoEntityService merchantInfoEntityServiceImpl;
+    @Autowired
+    IMerchantInfoEntityService merchantInfoEntityServiceImpl;
+
     @PostMapping("/agent/order/list")
     @ResponseBody
     public TableDataInfo agentOrder(AlipayDealOrderApp alipayDealOrderApp) {
@@ -730,8 +773,8 @@ public class BackManageController extends BaseController {
             list1.remove(0);
             list1.remove(0);
         }
-        if(StrUtil.isNotBlank(alipayDealOrderApp.getUserName())) {
-            if(list1.contains(alipayDealOrderApp.getUserName())) {
+        if (StrUtil.isNotBlank(alipayDealOrderApp.getUserName())) {
+            if (list1.contains(alipayDealOrderApp.getUserName())) {
                 list1.clear();
                 list1 = new ArrayList();
                 list1.add(alipayDealOrderApp.getUserName());
@@ -755,7 +798,7 @@ public class BackManageController extends BaseController {
                 order.setRetain1(product.getProductName());
             }
         }
-        prCollect  = null;
+        prCollect = null;
         userCollect = null;
         return getDataTable(list);
     }
@@ -778,7 +821,7 @@ public class BackManageController extends BaseController {
 
     @GetMapping("/withdrawal/getRateUsdtFee")
     @ResponseBody
-    public AjaxResult getRateUsdtFee(HttpServletRequest request,String addressType) {
+    public AjaxResult getRateUsdtFee(HttpServletRequest request, String addressType) {
         String amountCNY = request.getParameter("amountCNY");//人民币充值金额
         if (StrUtil.isEmpty(amountCNY)) {
             return AjaxResult.error("数据错误");
@@ -802,7 +845,7 @@ public class BackManageController extends BaseController {
                     aDouble = aDouble + i;
                     double v = 0;
                     try {
-                        BigDecimal onlineRate =new BigDecimal(BigInteger.ZERO);
+                        BigDecimal onlineRate = new BigDecimal(BigInteger.ZERO);
                         BigDecimal locatuonRate = BigDecimal.valueOf(Double.valueOf(date.getDictValue()));
                         onlineRate = BigDecimal.valueOf(Double.valueOf(getRateFee()));
                         v = onlineRate.add(locatuonRate).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
@@ -845,8 +888,8 @@ public class BackManageController extends BaseController {
         String key = alipayUserInfos.get(0).getPayPasword();//交易密钥
         String publicKey = alipayUserInfos.get(0).getPublicKey();
         String amount = alipayWithdrawEntity.getAmount().toString();
-        String orderId = GenerateOrderNo.getInstance().Generate(StringUtils.equals(alipayWithdrawEntity.getAddressType()==null?
-                "":alipayWithdrawEntity.getAddressType(),"trc")?"USDT_TRC":"USDT_ERC");
+        String orderId = GenerateOrderNo.getInstance().Generate(StringUtils.equals(alipayWithdrawEntity.getAddressType() == null ?
+                "" : alipayWithdrawEntity.getAddressType(), "trc") ? "USDT_TRC" : "USDT_ERC");
         orderId = orderId + "_" + userId;
         String post = postWit(amount, userid, rateEntity.getPayTypr(), orderId, key, publicKey, alipayWithdrawEntity.getUSDTRate());
         JSONObject json = JSONObject.parseObject(post);
@@ -874,8 +917,10 @@ public class BackManageController extends BaseController {
             return AjaxResult.error("暂无收款地址");
         }
     }
+
     @Value("${otc.wit.url}")
     private String witUrl;
+
     String postWit(String amount, String userId, String payType, String orderId, String key, String publicKey, String url) {
         Map<String, Object> parMap = new HashMap<>();
         parMap.put("amount", amount);
@@ -920,12 +965,11 @@ public class BackManageController extends BaseController {
         List<String> subUserIds = merchantInfoEntityService.selectNextAgentByParentId(sysUser.getLoginName());
 //        String userIdStr = subUserIds.get(0)==null ? "":subUserIds.get(0);
 //        userIdStr = userIdStr.replace("$,","");
-        if(CollectionUtils.isNotEmpty(subUserIds)) {
+        if (CollectionUtils.isNotEmpty(subUserIds)) {
 
             String[] idArray = subUserIds.get(0).split(",");
             subUserIds = Arrays.asList(idArray);
-        }else
-        {
+        } else {
             subUserIds = Lists.newArrayList();
             subUserIds.add(sysUser.getLoginName());
         }
@@ -956,8 +1000,8 @@ public class BackManageController extends BaseController {
         }
         Object o = this.cache.get(RATE_KEY + DateUtils.getTime());
         if (null == o) {
-            String rateBull = getRate( "buy");
-            String rateSell = getRate( "sell");
+            String rateBull = getRate("buy");
+            String rateSell = getRate("sell");
             BigDecimal bigDecimal = new BigDecimal(rateBull);
             BigDecimal bigDecimal1 = new BigDecimal(rateSell);
             if (bigDecimal.compareTo(bigDecimal1) == -1) {
@@ -970,6 +1014,7 @@ public class BackManageController extends BaseController {
         }
         return null;
     }
+
     @Value("${otc.usdt.rate}")
     private String otcRate;
 

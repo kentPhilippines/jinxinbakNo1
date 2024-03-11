@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Map;
 
 public interface AdminApiVo {
     @Data
@@ -124,6 +125,7 @@ public interface AdminApiVo {
         private Integer amountType;
         private BigDecimal balance;
         private Date createTime;
+        private Map<String, Object> params;
     }
 
 

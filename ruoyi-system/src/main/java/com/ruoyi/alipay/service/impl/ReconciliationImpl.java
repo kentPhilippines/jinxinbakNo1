@@ -252,17 +252,6 @@ public class ReconciliationImpl implements Reconciliation {
         dealpayRunOrderServiceImpl.insertDealpayRunOrder(run);
     }
 
-    void msg(String text1) {
-        ThreadUtil.execute(() -> {
-            String url = "http://172.29.17.155:8889/api/send?text=";
-            String text = HttpUtil.encode(text1, "UTF-8");
-            String id = "&id=";
-            String ids = "-1001464340513";
-            id += ids;
-            String s = url + text + id;
-            HttpUtil.get(s);
-        });
-    }
 
 
 }

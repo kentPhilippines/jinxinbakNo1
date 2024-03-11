@@ -1,7 +1,7 @@
 package com.ruoyi.alipay.domain;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.ruoyi.alipay.domain.util.Page;
 import lombok.Data;
 
 /**

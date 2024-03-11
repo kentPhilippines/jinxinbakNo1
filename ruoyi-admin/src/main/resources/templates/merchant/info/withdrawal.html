@@ -100,13 +100,13 @@
                     formatter: function (value, row, index) {
                         var table = '<ul>'
                         if(row.orderStatus == 2 || row.orderStatus== '2'){
-                            table += '<li>' + '<span class="badge badge-info"> 成功</span>' + '</li>'
+                            table += '<li>' + '<span class="badge success"> 成功</span>' + '</li>'
                         }
                         if(row.orderStatus == 1 || row.orderStatus== '1'){
                             table += '<li>' + '<span class="badge badge-info"> 审核中</span>' + '</li>'
                         }
                         if(row.orderStatus == 4 || row.orderStatus== '4'){
-                            table += '<li>' + '<span class="badge badge-info"> 失败</span>' + '</li>'
+                            table += '<li>' + '<span class="badge badge-warning  fa-warning"> 失败</span>' + '</li>'
                         }
                         return table;
                     }

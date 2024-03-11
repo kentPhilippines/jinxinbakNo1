@@ -1,9 +1,9 @@
 package com.ruoyi.alipay.domain;
 
-import com.baomidou.mybatisplus.core.metadata.OrderItem;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.ruoyi.alipay.domain.util.OrderItem;
+import com.ruoyi.alipay.domain.util.Page;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
