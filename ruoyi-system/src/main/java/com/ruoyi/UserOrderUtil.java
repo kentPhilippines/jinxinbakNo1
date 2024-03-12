@@ -14,6 +14,7 @@ import java.util.List;
 public class UserOrderUtil extends BaseUtil {
     public final static String PAGE_USER = "/userOrder/page";
     public final static String QUERY_ONE = "/userOrder/info";
+    public final static String LIST = "/userOrder/list";
 
     public static UserOrder selectUserOrderById(String orderId) {
         AdminApiVo.UserOrderVo vo = new AdminApiVo.UserOrderVo();
@@ -26,7 +27,11 @@ public class UserOrderUtil extends BaseUtil {
     }
 
     public static List<UserOrder> selectUserOrderList(UserOrder userOrder) {
-        return new ArrayList<>();
+        String s = HttpUtils.sendPostJson(ZUUL + LIST, JSONUtil.parse(userOrder).toString());
+        System.out.println(s);
+        ZullResult bean1 = JSONUtil.toBean(s, ZullResult.class);
+        List<UserOrder> list = JSONUtil.toList(bean1.getData().toString(), UserOrder.class);
+        return list;
     }
 
     public static int insertUserOrder(UserOrder userOrder) {

@@ -198,7 +198,7 @@ public class BackManageController extends BaseController {
         SysUser sysUser = ShiroUtils.getSysUser();
         runOrder.setAccount(sysUser.getMerchantId());
         UserInfo userWit = UserInfoUtil.selectUserInfoByName(sysUser.getMerchantId());
-        if (ObjectUtil.isNotNull(userWit)) {
+        if (ObjectUtil.isNull(userWit)) {
             ResPage<RunOrder> list = new ResPage<>();
             return getDataTablePage(list);
         }
@@ -284,7 +284,7 @@ public class BackManageController extends BaseController {
         SysUser sysUser = ShiroUtils.getSysUser();
         userOrder.setName(sysUser.getMerchantId());
         UserInfo userWit = UserInfoUtil.selectUserInfoByName(sysUser.getMerchantId());
-        if (ObjectUtil.isNotNull(userWit)) {
+        if (ObjectUtil.isNull(userWit)) {
             ResPage<RunOrder> list = new ResPage<>();
             return getDataTablePage(list);
         }
@@ -306,50 +306,12 @@ public class BackManageController extends BaseController {
     @Log(title = "商户代付详情导出", businessType = BusinessType.EXPORT)
     @PostMapping("/withdrawal/export")
     @ResponseBody
-    public AjaxResult withdrawalExport(AlipayWithdrawEntity alipayWithdrawEntity) {
+    public AjaxResult withdrawalExport(UserOrder alipayWithdrawEntity) {
         SysUser sysUser = ShiroUtils.getSysUser();
-        alipayWithdrawEntity.setUserId(sysUser.getMerchantId());
-        startPage();
-        List<AlipayWithdrawEntity> list = alipayWithdrawEntityService.selectAlipayWithdrawEntityList(alipayWithdrawEntity);
-        List<WitAppExport> exportList = new ArrayList<>();
-        AlipayProductEntity alipayProductEntity = new AlipayProductEntity();
-        alipayProductEntity.setStatus(1);
-        List<AlipayProductEntity> productlist = alipayProductService.selectAlipayProductList(alipayProductEntity);
-        ConcurrentHashMap<String, AlipayProductEntity> prCollect = productlist.stream().collect(Collectors.toConcurrentMap(AlipayProductEntity::getProductId, Function.identity(), (o1, o2) -> o1, ConcurrentHashMap::new));
-        for (AlipayWithdrawEntity wit : list) {
-            WitAppExport export = new WitAppExport();
-            export.setUserId(wit.getUserId());
-            export.setAccname(wit.getAccname());
-            export.setActualAmount(wit.getActualAmount());
-            export.setAmount(wit.getAmount());
-            export.setBankName(wit.getBankName());
-            export.setBankNo(wit.getBankNo());
-            export.setComment(wit.getComment());
-            export.setFee(wit.getFee());
-            export.setMobile(wit.getMobile());
-            export.setNotify(wit.getNotify());
-            export.setOrderId(wit.getOrderId());
-            export.setAppOrderId(wit.getAppOrderId());
-            export.setOrderStatus(wit.getOrderStatus());
-            AlipayProductEntity product = prCollect.get(wit.getWitType());
-            if (ObjectUtil.isNotNull(product)) {
-                wit.setWitType(product.getProductName());
-            }
-            export.setWitType(wit.getWitType());
-            export.setSubmitTime(wit.getSubmitTime());
-            export.setCreateTime(wit.getCreateTime());
-            String apply = wit.getApply();
-            if (StrUtil.isEmpty(apply)) {
-                apply = "否";
-            } else {
-                apply = "是";
-            }
-            export.setAuto(apply);
-            exportList.add(export);
-            export = null;
-        }
-        ExcelUtil<WitAppExport> util = new ExcelUtil<WitAppExport>(WitAppExport.class);
-        return util.exportExcel(exportList, "wit");
+        alipayWithdrawEntity.setName(sysUser.getMerchantId());
+        List<UserOrder> userOrders = UserOrderUtil.selectUserOrderList(alipayWithdrawEntity);
+        ExcelUtil<UserOrder> util = new ExcelUtil<UserOrder>(UserOrder.class);
+        return util.exportExcel(userOrders, "wit");
     }
 
 

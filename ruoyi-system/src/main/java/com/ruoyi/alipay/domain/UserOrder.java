@@ -68,7 +68,7 @@ public class UserOrder extends ReqPage implements Serializable {
     /**
      * 订单状态
      */
-    @Excel(name = "订单状态")
+    @Excel(name = "订单状态", readConverterExp = "2=成功,4=失败,3=审核中")
     private Integer orderStatus;
 
     /**
@@ -78,7 +78,7 @@ public class UserOrder extends ReqPage implements Serializable {
     /**
      * 货币类型
      */
-    @Excel(name = "货币类型")
+    @Excel(name = "货币类型", readConverterExp = "CNY=人民币")
     private String currency;
 
     /**
@@ -88,7 +88,7 @@ public class UserOrder extends ReqPage implements Serializable {
     /**
      * 结算状态
      */
-    @Excel(name = "结算状态")
+    @Excel(name = "结算状态", readConverterExp = "1=已结算,0=未结算")
     private Integer payStatus;
 
     /**
