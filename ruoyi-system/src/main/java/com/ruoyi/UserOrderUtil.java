@@ -56,9 +56,8 @@ public class UserOrderUtil extends BaseUtil {
         userOrder.setParams(data.getParams());
         String s = HttpUtils.sendPostJson(ZUUL + PAGE_USER, JSONUtil.parse(userOrder).toString());
         System.out.println(s);
-        ZullResult bean1 = JSONUtil.toBean(s, ZullResult.class);
-        ResPage bean = JSONUtil.toBean(bean1.getData().toString(), ResPage.class);
-        return bean;
+        RP<UserOrder> e = new RP<UserOrder>();
+        return e.getReqPage(s, UserOrder.class);
     }
 
     public static List<UserOrder> selectUserOrderByIds(String[] strArray) {

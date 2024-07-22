@@ -25,9 +25,8 @@ public class RunOrderUtil extends BaseUtil {
         runOrder.setParams(data.getParams());
         String s = HttpUtils.sendPostJson(ZUUL + PAGE_USER, JSONUtil.parse(runOrder).toString());
         System.out.println(s);
-        ZullResult bean1 = JSONUtil.toBean(s, ZullResult.class);
-        ResPage bean = JSONUtil.toBean(bean1.getData().toString(), ResPage.class);
-        return bean;
+        RP<RunOrder> e = new RP<RunOrder>();
+        return e.getReqPage(s, RunOrder.class);
     }
 
     public static int updateRunOrder(RunOrder runOrder) {
